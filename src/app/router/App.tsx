@@ -1,10 +1,7 @@
-function App() {
+import { AppRouter } from './Router';
 
-  return (
-   <h1 className="text-3xl font-bold animate-bounce mt-10 text-center">
-    PASS SWP
-  </h1>
-  )
+function App() {
+  return <AppRouter />;
 }
 
-export default App
+export default App;
