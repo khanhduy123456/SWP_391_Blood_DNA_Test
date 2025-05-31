@@ -6,13 +6,13 @@ import {
 
 import { routes } from '@/shared/config/routes';
 import { ProtectedRoute } from '../providers/route-guard';
-import HomePage from '@/pages/HomePage';
+import Home from '@/pages/Home';
 
 export const AppRouter = () => {
   return (
     <Router>
       <Routes>
-        <Route path={routes.home} element={<HomePage />} />
+        <Route path={routes.home} element={<Home />} />
         
 
         <Route element={<ProtectedRoute />}> 
