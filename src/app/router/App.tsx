@@ -1,10 +1,12 @@
-function App() {
-
+import Home from "@/page/home/Home";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+export default function App(): React.ReactElement {
   return (
-   <h1 className="text-3xl font-bold animate-bounce mt-10 text-center">
-    PASS SWP
-  </h1>
-  )
+    <Router>
+      <Routes>
+        {/* Route mặc định cho trang chủ của khách hàng */}
+        <Route path="/" element={<Home />} />
+      </Routes>
+    </Router>
+  );
 }
-
-export default App
