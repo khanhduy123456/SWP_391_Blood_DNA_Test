@@ -3,9 +3,8 @@ import { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 
-
 const Header: React.FC = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [isScrolled, setIsScrolled] = useState<boolean>(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,6 +20,15 @@ const Header: React.FC = () => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
+
+  // Hàm xử lý cuộn mượt đến footer
+  const scrollToFooter = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault(); // Ngăn hành vi mặc định của thẻ <a>
+    const footer = document.getElementById("footer");
+    if (footer) {
+      footer.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   return (
     <header
@@ -50,29 +58,29 @@ const Header: React.FC = () => {
               { label: "Hướng dẫn", hasDropdown: true },
               { label: "Tin tức", hasDropdown: false },
               { label: "Hỏi đáp", hasDropdown: false },
-              { label: "Liên hệ", hasDropdown: false, href: "#footer" },
+              { label: "Liên hệ", hasDropdown: false },
             ].map((item, index) => (
               <a
                 key={item.label}
-                href="#"
+                href={item.label === "Liên hệ" ? "#footer" : "#"}
+                onClick={item.label === "Liên hệ" ? scrollToFooter : undefined}
                 className={`text-gray-700 hover:text-red-600 font-medium flex items-center transition-transform duration-300 hover:scale-105 animate-slideInDown animate-delay-${index * 100}`}
               >
                 {item.label}
-                {item.hasDropdown && <ChevronDown className="w-4 h-4 ml-1 transition-transform duration-300 group-hover:rotate-180" />}
+                {item.hasDropdown && (
+                  <ChevronDown className="w-4 h-4 ml-1 transition-transform duration-300 group-hover:rotate-180" />
+                )}
               </a>
             ))}
           </nav>
 
           {/* Right side buttons với hiệu ứng rotate cho Search */}
           <div className="flex items-center space-x-4">
-            {/* <button className="p-2 hover:bg-gray-100 rounded-full group transition-colors duration-300">
-              <Search className="w-5 h-5 text-gray-600 transition-transform duration-300 group-hover:rotate-90" />
-            </button> */}
             <Link
-                to="/login"
-                className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-full transition-colors duration-300"
+              to="/login"
+              className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-full transition-colors duration-300"
             >
-                 Đăng nhập
+              Đăng nhập
             </Link>
           </div>
         </div>

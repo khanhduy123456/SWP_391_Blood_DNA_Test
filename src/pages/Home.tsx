@@ -1,4 +1,3 @@
-import React from "react";
 import Header from "../features/home/HomeHeader";
 import Body from "../features/home/HomeBody";
 import Footer from "../features/home/HomeFooter";
