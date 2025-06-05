@@ -8,7 +8,8 @@ import { routes } from '@/shared/config/routes';
 import { ProtectedRoute } from '../providers/route-guard';
 import Home from '@/pages/Home';
 import Login from '@/features/auth/pages/Login';
-import Register from '@/features/auth/pages/register';
+import Register from '@/features/auth/pages/Register';
+import NotFound from '@/features/home/notFound';
 
 
 export const AppRouter = () => {
@@ -19,6 +20,8 @@ export const AppRouter = () => {
         <Route path={routes.home} element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
+        <Route path="/notfound" element={<NotFound />} />
         
 
         <Route element={<ProtectedRoute />}> 

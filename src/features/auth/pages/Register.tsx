@@ -2,7 +2,7 @@
 import { Button } from "@/shared/ui/button";
 import {  FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/shared/ui/form";
 import { Input } from "@/shared/ui/input";
-import { Activity, Clock, Heart, Shield, UserPlus, Users, Mail, Phone, Home, Lock, User } from "lucide-react";
+import { Activity, Clock, Heart, Shield, Users, Mail, Phone, Home, Lock, User } from "lucide-react";
 import { useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -206,9 +206,9 @@ const RegisterForm: React.FC = () => {
       <div className="flex items-center justify-center justify-between p-20">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center">
-            <div className="inline-flex items-center w-16 h-16 mb-full bg-green-100 rounded-full">
+            {/* <div className="inline-flex items-center w-16 h-16 mb-full bg-green-100 rounded-full">
               <UserPlus size={20} className="text-green-600" />
-            </div>
+            </div> */}
             <h2 className="mb-4 text-3xl font-bold">Đăng Ký Tài Khoản</h2>
             <p className="text-gray-600">
               Tạo tài khoản để truy cập đầy đủ dịch vụ y tế
