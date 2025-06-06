@@ -1,148 +1,135 @@
 import { Button } from "@/shared/ui/button";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 
 const NotFound: React.FC = () => {
-  const DNAIcon = () => (
-    <div className="relative w-16 h-16 md:w-24 md:h-24">
-      <svg
-        className="w-full h-full text-blue-600"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        viewBox="0 0 24 24"
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const particles: Particle[] = [];
+    const particleCount = 50;
+
+    class Particle {
+      x: number;
+      y: number;
+      size: number;
+      speedX: number;
+      speedY: number;
+
+      constructor() {
+        this.x = Math.random() * canvas!.width;
+        this.y = Math.random() * canvas!.height;
+        this.size = Math.random() * 3 + 1;
+        this.speedX = Math.random() * 1 - 0.5;
+        this.speedY = Math.random() * 1 - 0.5;
+      }
+
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+
+        if (this.size > 0.2) this.size -= 0.01;
+        if (this.x < 0 || this.x > canvas!.width) this.speedX *= -1;
+        if (this.y < 0 || this.y > canvas!.height) this.speedY *= -1;
+      }
+
+      draw() {
+        if (!ctx) return;
+        ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    for (let i = 0; i < particleCount; i++) {
+      particles.push(new Particle());
+    }
+
+    function animate() {
+      if (!ctx || !canvas) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach((particle, index) => {
+        particle.update();
+        particle.draw();
+        if (particle.size <= 0.2) {
+          particles.splice(index, 1);
+          particles.push(new Particle());
+        }
+      });
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    const handleResize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const Animated404 = () => (
+    <svg
+      className="w-24 h-24 md:w-32 md:h-32 text-teal-500"
+      viewBox="0 0 100 100"
+    >
+      <style>
+        {`
+          .number {
+            animation: bounce 2s ease-in-out infinite;
+            transform-origin: center;
+          }
+          @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+          }
+        `}
+      </style>
+      <text
+        x="50%"
+        y="50%"
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fontSize="60"
+        fontWeight="bold"
+        className="number"
+        fill="currentColor"
       >
-        <defs>
-          <style>
-            {`
-              .dna-strand1 {
-                animation: dna-rotate 3s linear infinite;
-                transform-origin: 12px 12px;
-              }
-              .dna-strand2 {
-                animation: dna-rotate 3s linear infinite reverse;
-                transform-origin: 12px 12px;
-              }
-              .dna-glow {
-                filter: drop-shadow(0 0 6px currentColor);
-                animation: dna-pulse 2s ease-in-out infinite;
-              }
-              .dna-connecting {
-                animation: dna-fade 1.5s ease-in-out infinite;
-              }
-              @keyframes dna-rotate {
-                0% { transform: rotateY(0deg); }
-                100% { transform: rotateY(360deg); }
-              }
-              @keyframes dna-pulse {
-                0%, 100% { opacity: 1; transform: scale(1); }
-                50% { opacity: 0.7; transform: scale(1.1); }
-              }
-              @keyframes dna-fade {
-                0%, 100% { opacity: 0.4; }
-                50% { opacity: 1; }
-              }
-            `}
-          </style>
-        </defs>
-        <g className="dna-glow">
-          {/* Left DNA Strand */}
-          <g className="dna-strand1">
-            <path
-              d="M8 2c0 4-2 6-2 10s2 6 2 10"
-              strokeLinecap="round"
-              strokeWidth="2"
-            />
-            <circle cx="8" cy="4" r="1.5" fill="currentColor" />
-            <circle cx="6" cy="8" r="1.5" fill="currentColor" />
-            <circle cx="8" cy="12" r="1.5" fill="currentColor" />
-            <circle cx="6" cy="16" r="1.5" fill="currentColor" />
-            <circle cx="8" cy="20" r="1.5" fill="currentColor" />
-          </g>
-
-          {/* Right DNA Strand */}
-          <g className="dna-strand2">
-            <path
-              d="M16 2c0 4 2 6 2 10s-2 6-2 10"
-              strokeLinecap="round"
-              strokeWidth="2"
-            />
-            <circle cx="16" cy="4" r="1.5" fill="currentColor" />
-            <circle cx="18" cy="8" r="1.5" fill="currentColor" />
-            <circle cx="16" cy="12" r="1.5" fill="currentColor" />
-            <circle cx="18" cy="16" r="1.5" fill="currentColor" />
-            <circle cx="16" cy="20" r="1.5" fill="currentColor" />
-          </g>
-
-          {/* Connecting Lines with Fade Animation */}
-          <g className="dna-connecting">
-            <line
-              x1="8"
-              y1="4"
-              x2="16"
-              y2="4"
-              stroke="currentColor"
-              strokeWidth="1"
-            />
-            <line
-              x1="6"
-              y1="8"
-              x2="18"
-              y2="8"
-              stroke="currentColor"
-              strokeWidth="1"
-            />
-            <line
-              x1="8"
-              y1="12"
-              x2="16"
-              y2="12"
-              stroke="currentColor"
-              strokeWidth="1"
-            />
-            <line
-              x1="6"
-              y1="16"
-              x2="18"
-              y2="16"
-              stroke="currentColor"
-              strokeWidth="1"
-            />
-            <line
-              x1="8"
-              y1="20"
-              x2="16"
-              y2="20"
-              stroke="currentColor"
-              strokeWidth="1"
-            />
-          </g>
-        </g>
-      </svg>
-    </div>
+        404
+      </text>
+    </svg>
   );
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-4 bg-gradient-to-br from-blue-50 to-blue-200">
-      <div className="text-center">
+    <div className="relative flex min-h-screen items-center justify-center bg-gray-900 text-white overflow-hidden">
+      <canvas ref={canvasRef} className="absolute inset-0 z-0" />
+      <div className="relative z-10 text-center px-4">
         <div className="flex justify-center mb-6">
-          <DNAIcon />
+          <Animated404 />
         </div>
-        <h1 className="mb-4 text-5xl font-bold text-gray-800 md:text-7xl animate-pulse">
-          404
+        <h1 className="mb-4 text-4xl md:text-6xl font-extrabold tracking-tight">
+          Trang Không Tìm Thấy
         </h1>
-        <h2 className="mb-4 text-2xl font-semibold text-gray-700 md:text-3xl">
-          Trang không tìm thấy
-        </h2>
-        <p className="max-w-md mx-auto mb-8 text-base text-gray-600 md:text-base">
+        <p className="mb-8 text-lg md:text-xl text-gray-300 max-w-md mx-auto">
           Rất tiếc, trang bạn đang tìm kiếm không tồn tại hoặc đã bị di chuyển.
-          Hãy quay lại trang chủ để tiếp tục khám phá.
+          Hãy quay lại trang chủ.
         </p>
         <Link to="/">
           <Button
-            type="button"
             size="lg"
-            className="px-6 py-3 transition-all duration-300 bg-blue-600 border-none shadow-lg hover:bg-blue-700 hover:shadow-xl"
+            className="px-8 py-3 bg-teal-500 text-white font-semibold rounded-full hover:bg-teal-600 transition-all duration-300 shadow-lg hover:shadow-xl"
           >
             Quay lại Trang chủ
           </Button>
