@@ -1,3 +1,4 @@
+// src/app/AppRouter.tsx
 import {
   BrowserRouter as Router,
   Routes,
@@ -10,26 +11,33 @@ import Home from '@/pages/Home';
 import Login from '@/features/auth/pages/Login';
 import Register from '@/features/auth/pages/Register';
 import NotFound from '@/features/home/notFound';
+import Dashboard from '@/features/admin/pages/dashboard';
+import UserManagement from '@/features/admin/pages/userManager';
+import AdminLayout from '@/features/admin/adminLayout';
 
 
 export const AppRouter = () => {
+  const userRole = 'Admin'; 
+
   return (
     <Router>
       <Routes>
-        {/* router auth */}
+        {/* Public Routes */}
         <Route path={routes.home} element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-
         <Route path="/notfound" element={<NotFound />} />
-        
 
-        <Route element={<ProtectedRoute />}> 
-        {/* dành cho các role ngoài guest */}
-        
-          {/* <Route path={routes.adminDashboard} element={<AdminDashboard />} /> */}
-
+        {/* Protected Routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AdminLayout role={userRole} />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/users" element={<UserManagement />} />
+          </Route>
         </Route>
+
+        {/* Catch all */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );
