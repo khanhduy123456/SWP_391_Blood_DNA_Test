@@ -2,6 +2,7 @@
 import { Button } from "@/shared/ui/button";
 import {
     LayoutDashboard,
+  TestTubeDiagonal,
   User,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
@@ -40,6 +41,12 @@ const Sidebar = ({ role }: SidebarProps) => {
           name: "User Management",
           href: "/users",
           icon: <User size={size} />,
+          position: "top",
+        },
+        {
+          name: "Kit Test Management",
+          href: "/kits",
+          icon: <TestTubeDiagonal size={size} />,
           position: "top",
         },
         

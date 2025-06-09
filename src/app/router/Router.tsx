@@ -14,6 +14,7 @@ import NotFound from '@/features/home/notFound';
 import Dashboard from '@/features/admin/pages/dashboard';
 import UserManagement from '@/features/admin/pages/userManager';
 import AdminLayout from '@/features/admin/adminLayout';
+import KitManagement from '@/features/admin/pages/kitManager';
 
 
 export const AppRouter = () => {
@@ -33,6 +34,7 @@ export const AppRouter = () => {
           <Route element={<AdminLayout role={userRole} />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/users" element={<UserManagement />} />
+            <Route path="/kits" element={<KitManagement />} />
           </Route>
         </Route>
 
