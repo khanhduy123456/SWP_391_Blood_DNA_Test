@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { MoreVertical, Pencil } from "lucide-react";
 import type { Kit, PagedKitResponse } from "../types/kit";
 import { getPagedKits } from "../api/kit.api";
+import { AddKitModal } from "./addKitPopup";
 
 function formatDateTime(dateString: string) {
   const date = new Date(dateString);
@@ -30,6 +31,7 @@ function KitManagement() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const [isAddKitModalOpen, setAddKitModalOpen] = useState(false);
 
   const fetchKits = async (pageNumber: number, pageSize: number) => {
     setLoading(true);
@@ -61,12 +63,21 @@ function KitManagement() {
     }
   };
 
+  const handleKitCreated = (kit: Kit) => {
+    console.log("New kit created:", kit);
+    // Gọi lại API để làm mới danh sách kits
+    fetchKits(kitsData.pageNumber, kitsData.pageSize);
+  };
+
   return (
     <div className="p-10 bg-gradient-to-br from-green-50 to-white min-h-screen">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-bold text-green-700">Quản lý bộ KIT</h2>
-          <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 shadow transition">
+          <button
+            onClick={() => setAddKitModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 shadow transition"
+          >
             + Thêm KIT
           </button>
         </div>
@@ -182,6 +193,12 @@ function KitManagement() {
             </>
           )}
         </div>
+
+        <AddKitModal
+          isOpen={isAddKitModalOpen}
+          onClose={() => setAddKitModalOpen(false)}
+          onKitCreated={handleKitCreated}
+        />
       </div>
     </div>
   );
