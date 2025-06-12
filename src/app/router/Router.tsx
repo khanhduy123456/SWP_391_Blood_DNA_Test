@@ -13,8 +13,9 @@ import Register from '@/features/auth/pages/Register';
 import NotFound from '@/features/home/notFound';
 import Dashboard from '@/features/admin/pages/dashboard';
 import UserManagement from '@/features/admin/pages/userManager';
-import AdminLayout from '@/features/admin/adminLayout';
 import KitManagement from '@/features/admin/pages/kitManager';
+import AdminLayout from '@/pages/admin/adminLayout';
+import { BookingModal } from '@/pages/services/components/booking';
 
 
 export const AppRouter = () => {
@@ -35,6 +36,7 @@ export const AppRouter = () => {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/users" element={<UserManagement />} />
             <Route path="/kits" element={<KitManagement />} />
+             <Route path="/booking-modal" element={<BookingModal isOpen={true} onClose={() => {}} />} />
           </Route>
         </Route>
 
