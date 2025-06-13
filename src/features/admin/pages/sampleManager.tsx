@@ -2,25 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { MoreVertical, Pencil } from "lucide-react";
-import type { Kit, PagedKitResponse } from "../types/kit";
-import { getPagedKits } from "../api/kit.api";
-import { AddKitModal } from "./addKitPopup";
-import toast from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast"; // Thêm Toaster
+import type { PagedSampleResponse, SampleMethod } from "../types/method";
+import { getPagedSampleMethods } from "../api/sample.api";
+import { AddSampleMethodModal } from "./addSampleMethod";
 
-function formatDateTime(dateString: string) {
-  const date = new Date(dateString);
-  return date.toLocaleString("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-}
-
-function KitManagement() {
-  const [kitsData, setKitsData] = useState<PagedKitResponse>({
+function SampleMethodManagement() {
+  const [methodsData, setMethodsData] = useState<PagedSampleResponse>({
     items: [],
     pageNumber: 1,
     totalPages: 1,
@@ -32,43 +20,42 @@ function KitManagement() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
-  const [isAddKitModalOpen, setAddKitModalOpen] = useState(false);
+  const [isAddSampleModalOpen, setAddSampleModalOpen] = useState(false);
 
-  const fetchKits = async (pageNumber: number, pageSize: number) => {
+  const fetchMethods = async (pageNumber: number, pageSize: number) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getPagedKits(pageNumber, pageSize);
-      setKitsData(data);
+      const data = await getPagedSampleMethods(pageNumber, pageSize);
+      setMethodsData(data);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
-      setError("Lấy dữ liệu bộ KIT thất bại");
+      setError("Lấy dữ liệu phương pháp xét nghiệm thất bại");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchKits(kitsData.pageNumber, kitsData.pageSize);
-  }, [kitsData.pageNumber, kitsData.pageSize]);
+    fetchMethods(methodsData.pageNumber, methodsData.pageSize);
+  }, [methodsData.pageNumber, methodsData.pageSize]);
 
   const handlePreviousPage = () => {
-    if (kitsData.hasPreviousPage) {
-      setKitsData({ ...kitsData, pageNumber: kitsData.pageNumber - 1 });
+    if (methodsData.hasPreviousPage) {
+      setMethodsData({ ...methodsData, pageNumber: methodsData.pageNumber - 1 });
     }
   };
 
   const handleNextPage = () => {
-    if (kitsData.hasNextPage) {
-      setKitsData({ ...kitsData, pageNumber: kitsData.pageNumber + 1 });
+    if (methodsData.hasNextPage) {
+      setMethodsData({ ...methodsData, pageNumber: methodsData.pageNumber + 1 });
     }
   };
 
-  const handleKitCreated = (kit: Kit) => {
-    console.log("New kit created:", kit);
-    // Gọi lại API để làm mới danh sách kits
-    fetchKits(kitsData.pageNumber, kitsData.pageSize);
-    toast.success(`"${kit.name}" đã được tạo thành công!`, {
+  const handleMethodCreated = (method: SampleMethod) => {
+    console.log("New method created:", method);
+    fetchMethods(methodsData.pageNumber, methodsData.pageSize);
+    toast.success(`Phương pháp "${method.name}" đã được tạo thành công!`, {
       duration: 3000,
       position: "bottom-right",
     });
@@ -78,13 +65,15 @@ function KitManagement() {
     <div className="p-10 bg-gradient-to-br from-green-50 to-white min-h-screen">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold text-green-700">Quản lý bộ KIT</h2>
-          <button
-            onClick={() => setAddKitModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 shadow transition"
-          >
-            + Thêm KIT
-          </button>
+          <h2 className="text-3xl font-bold text-green-700">Quản lý phương pháp xét nghiệm</h2>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setAddSampleModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 shadow transition"
+            >
+              + Thêm phương pháp
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto relative z-0 rounded-xl shadow-lg border border-green-100 bg-white min-h-[300px]">
@@ -106,40 +95,36 @@ function KitManagement() {
                 <thead>
                   <tr className="bg-green-100 text-green-700 uppercase text-xs tracking-wider">
                     <th className="py-3 px-5">ID</th>
-                    <th className="py-3 px-5">Tên KIT</th>
+                    <th className="py-3 px-5">Tên phương pháp</th>
                     <th className="py-3 px-5">Mô tả</th>
-                    <th className="py-3 px-5">Ngày tạo</th>
-                    <th className="py-3 px-5">Cập nhật lần cuối</th>
                     <th className="py-3 px-5 text-center">Hành động</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {kitsData.items.length > 0 ? (
-                    kitsData.items.map((kit: Kit) => (
+                  {methodsData.items.length > 0 ? (
+                    methodsData.items.map((method) => (
                       <tr
-                        key={kit.id}
+                        key={method.id}
                         className="border-b hover:bg-green-50 transition relative"
                       >
-                        <td className="py-3 px-5">{kit.id}</td>
-                        <td className="py-3 px-5 font-medium">{kit.name}</td>
-                        <td className="py-3 px-5">{kit.description}</td>
-                        <td className="py-3 px-5">{formatDateTime(kit.createAt)}</td>
-                        <td className="py-3 px-5">{formatDateTime(kit.updateAt)}</td>
+                        <td className="py-3 px-5">{method.id}</td>
+                        <td className="py-3 px-5 font-medium">{method.name}</td>
+                        <td className="py-3 px-5">{method.description}</td>
                         <td className="py-3 px-5 text-center relative">
                           <button
                             className="p-2 hover:bg-green-100 rounded-full"
                             onClick={() =>
-                              setOpenMenuId(openMenuId === kit.id ? null : kit.id)
+                              setOpenMenuId(openMenuId === method.id ? null : method.id)
                             }
                           >
                             <MoreVertical size={20} />
                           </button>
 
-                          {openMenuId === kit.id && (
+                          {openMenuId === method.id && (
                             <div className="absolute right-5 z-10 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
                               <button
                                 onClick={() => {
-                                  alert(`Chỉnh sửa: ${kit.name}`);
+                                  alert(`Chỉnh sửa: ${method.name}`);
                                   setOpenMenuId(null);
                                 }}
                                 className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm"
@@ -154,27 +139,27 @@ function KitManagement() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={6} className="text-center py-6 text-gray-500">
-                        Không có KIT nào.
+                      <td colSpan={4} className="text-center py-6 text-gray-500">
+                        Không có phương pháp nào.
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
 
-              {kitsData.items.length > 0 && (
+              {methodsData.items.length > 0 && (
                 <div className="flex justify-between items-center mt-4 px-5 py-3">
                   <div>
                     <p className="text-sm text-gray-600">
-                      Trang {kitsData.pageNumber} / {kitsData.totalPages} (Tổng: {kitsData.totalCount} kit)
+                      Trang {methodsData.pageNumber} / {methodsData.totalPages} (Tổng: {methodsData.totalCount})
                     </p>
                   </div>
                   <div className="flex gap-2">
                     <button
                       onClick={handlePreviousPage}
-                      disabled={!kitsData.hasPreviousPage}
+                      disabled={!methodsData.hasPreviousPage}
                       className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
-                        kitsData.hasPreviousPage
+                        methodsData.hasPreviousPage
                           ? "bg-green-600 text-white hover:bg-green-700"
                           : "bg-gray-200 text-gray-500 cursor-not-allowed"
                       }`}
@@ -183,9 +168,9 @@ function KitManagement() {
                     </button>
                     <button
                       onClick={handleNextPage}
-                      disabled={!kitsData.hasNextPage}
+                      disabled={!methodsData.hasNextPage}
                       className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
-                        kitsData.hasNextPage
+                        methodsData.hasNextPage
                           ? "bg-green-600 text-white hover:bg-green-700"
                           : "bg-gray-200 text-gray-500 cursor-not-allowed"
                       }`}
@@ -199,14 +184,15 @@ function KitManagement() {
           )}
         </div>
 
-        <AddKitModal
-          isOpen={isAddKitModalOpen}
-          onClose={() => setAddKitModalOpen(false)}
-          onKitCreated={handleKitCreated}
+        <AddSampleMethodModal
+          isOpen={isAddSampleModalOpen}
+          onClose={() => setAddSampleModalOpen(false)}
+          onSampleCreated={handleMethodCreated}
         />
+        <Toaster />
       </div>
     </div>
   );
 }
 
-export default KitManagement;
+export default SampleMethodManagement;

@@ -16,6 +16,7 @@ import UserManagement from '@/features/admin/pages/userManager';
 import KitManagement from '@/features/admin/pages/kitManager';
 import AdminLayout from '@/pages/admin/adminLayout';
 import { BookingModal } from '@/pages/services/components/booking';
+import SampleMethodManagement from '@/features/admin/pages/sampleManager';
 
 
 export const AppRouter = () => {
@@ -36,6 +37,7 @@ export const AppRouter = () => {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/users" element={<UserManagement />} />
             <Route path="/kits" element={<KitManagement />} />
+            <Route path="/sample-methods" element={<SampleMethodManagement />} />
              <Route path="/booking-modal" element={<BookingModal isOpen={true} onClose={() => {}} />} />
           </Route>
         </Route>

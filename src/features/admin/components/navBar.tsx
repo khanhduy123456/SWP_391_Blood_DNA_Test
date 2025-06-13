@@ -1,6 +1,7 @@
 // components/Sidebar.tsx
 import { Button } from "@/shared/ui/button";
 import {
+  BadgeCheck,
     LayoutDashboard,
   TestTubeDiagonal,
   User,
@@ -47,6 +48,12 @@ const Sidebar = ({ role }: SidebarProps) => {
           name: "Kit Test Management",
           href: "/kits",
           icon: <TestTubeDiagonal size={size} />,
+          position: "top",
+        },
+        {
+          name: "Sample Method Management",
+          href: "/sample-methods",
+          icon: <BadgeCheck size={size} />,
           position: "top",
         },
         
