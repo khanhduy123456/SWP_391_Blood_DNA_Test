@@ -7,6 +7,18 @@ import type { PagedSampleResponse, SampleMethod } from "../types/method";
 import { getPagedSampleMethods } from "../api/sample.api";
 import { AddSampleMethodModal } from "./addSampleMethod";
 
+
+function formatDateTime(dateString: string) {
+  const date = new Date(dateString);
+  return date.toLocaleString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
 function SampleMethodManagement() {
   const [methodsData, setMethodsData] = useState<PagedSampleResponse>({
     items: [],
@@ -97,6 +109,8 @@ function SampleMethodManagement() {
                     <th className="py-3 px-5">ID</th>
                     <th className="py-3 px-5">Tên phương pháp</th>
                     <th className="py-3 px-5">Mô tả</th>
+                    <th className="py-3 px-5">Ngày tạo</th>
+                    <th className="py-3 px-5">Cập nhật lần cuối</th>
                     <th className="py-3 px-5 text-center">Hành động</th>
                   </tr>
                 </thead>
@@ -110,6 +124,8 @@ function SampleMethodManagement() {
                         <td className="py-3 px-5">{method.id}</td>
                         <td className="py-3 px-5 font-medium">{method.name}</td>
                         <td className="py-3 px-5">{method.description}</td>
+                        <td className="py-3 px-5">{formatDateTime(method.createAt)}</td>
+                        <td className="py-3 px-5">{formatDateTime(method.updateAt)}</td>
                         <td className="py-3 px-5 text-center relative">
                           <button
                             className="p-2 hover:bg-green-100 rounded-full"
