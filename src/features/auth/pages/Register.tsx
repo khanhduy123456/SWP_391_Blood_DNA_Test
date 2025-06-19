@@ -1,7 +1,7 @@
 import { Button } from "@/shared/ui/button";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/shared/ui/form";
 import { Input } from "@/shared/ui/input";
-import { Dna, Heart, Shield, Users, Mail, Phone, Home, Lock, User, Eye, EyeOff } from "lucide-react";
+import { Dna, Heart, Shield, Users, Mail, Phone, Home, Lock, User, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -470,38 +470,16 @@ const RegisterForm: React.FC = () => {
 
       {/* Enhanced Loading Overlay */}
       {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm transition-opacity duration-300">
-          <div className="flex flex-col items-center p-6 bg-white rounded-xl shadow-2xl animate-fade-in">
-            <div className="relative w-12 h-12 mb-4">
-              <svg
-                className="animate-spin w-full h-full text-green-600"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                ></path>
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-3 h-3 bg-green-600 rounded-full animate-pulse"></div>
-              </div>
-            </div>
-            <span className="text-green-700 font-semibold text-base tracking-wide">
-              Đang tạo tài khoản...
-            </span>
-          </div>
-        </div>
+        // 
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+  <div className="flex flex-col items-center p-6 bg-white rounded-xl shadow-2xl">
+    <Loader2 className="w-12 h-12 animate-spin text-green-600 mb-4" />
+    <span className="text-green-700 font-semibold text-base tracking-wide">
+      Đang tạo tài khoản...
+    </span>
+  </div>
+</div>
+
       )}
     </div>
   );
