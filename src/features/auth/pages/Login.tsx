@@ -7,6 +7,16 @@ import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
 import * as z from "zod";
+import { loginApi } from "../api/login.api";
+import toast from "react-hot-toast";
+import { UserRoleNames } from "../types/auths.types";
+
+// Định nghĩa interface cho response API
+interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  roleId: number;
+}
 
 // Định nghĩa schema validation với zod
 const formSchema = z.object({
@@ -31,18 +41,60 @@ const LoginForm: React.FC = () => {
   const handleLogin = async (data: z.infer<typeof formSchema>) => {
     setLoading(true);
     try {
-      console.log("Dữ liệu giả:", data);
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Gọi API đăng nhập
+      const response: LoginResponse = await loginApi(data.email, data.password);
 
-        // Giả lập đăng nhập thành công
-        console.log("Đăng nhập thành công:", data);
-      navigate("/");
-    } catch (error) {
+      // Chuyển roleId thành role string
+      const userRole = UserRoleNames[response.roleId as keyof typeof UserRoleNames];
+      if (!userRole) {
+        throw new Error("Role không hợp lệ");
+      }
+
+      // Lưu accessToken, refreshToken và role vào localStorage
+      localStorage.setItem("accessToken", response.accessToken);
+      localStorage.setItem("refreshToken", response.refreshToken);
+      localStorage.setItem("userRole", userRole);
+
+      // Phân quyền dựa trên role
+      switch (userRole) {
+        case "Admin":
+          navigate("/admin/dashboard");
+          break;
+        case "Staff":
+          navigate("/staff");
+          break;
+        case "Manager":
+          navigate("/manager/test-management");
+          break;
+        case "Client":
+          navigate("/customer");
+          break;
+        default:
+          toast.error("Role không hợp lệ");
+          break;
+      }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
       console.error("Đăng nhập thất bại:", error);
-      form.setError("password", {
-        type: "manual",
-        message: "Đăng nhập thất bại, vui lòng kiểm tra lại",
-      });
+      // Xử lý lỗi chi tiết hơn
+      if (error.response?.status === 401) {
+        form.setError("password", {
+          type: "manual",
+          message: "Email hoặc mật khẩu không đúng",
+        });
+      } else if (error.response?.status === 429) {
+        form.setError("password", {
+          type: "manual",
+          message: "Quá nhiều yêu cầu, vui lòng thử lại sau",
+        });
+      } else {
+        const errorMessage = error.message || "Đăng nhập thất bại, vui lòng kiểm tra lại";
+        form.setError("password", {
+          type: "manual",
+          message: errorMessage,
+        });
+        toast.error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -76,7 +128,6 @@ const LoginForm: React.FC = () => {
                     </style>
                   </defs>
                   <g className="dna-helix">
-                    {/* Chuỗi DNA đơn giản hóa */}
                     <path
                       d="M6 4c0 4 3 6 6 8s6 4 6 8"
                       strokeLinecap="round"
@@ -87,11 +138,9 @@ const LoginForm: React.FC = () => {
                       strokeLinecap="round"
                       strokeWidth="1.5"
                     />
-                    {/* Các điểm nối giữa hai chuỗi */}
                     <line x1="6" y1="6" x2="18" y2="6" strokeWidth="1" opacity="0.6" />
                     <line x1="6" y1="12" x2="18" y2="12" strokeWidth="1" opacity="0.6" />
                     <line x1="6" y1="18" x2="18" y2="18" strokeWidth="1" opacity="0.6" />
-                    {/* Biểu tượng DNA nhỏ */}
                     <Dna size={20} className="absolute top-0 left-0 text-teal-300" />
                   </g>
                 </svg>
@@ -120,12 +169,11 @@ const LoginForm: React.FC = () => {
             </div>
           </div>
         </div>
-        {/* Hiệu ứng trang trí */}
         <div className="absolute w-20 h-20 rounded-full top-8 left-8 bg-teal-400/10 animate-pulse"></div>
         <div className="absolute w-14 h-14 rounded-full bottom-12 right-12 bg-white/15 animate-pulse"></div>
       </div>
 
-      {/* Right Side - Login Form (giữ nguyên) */}
+      {/* Right Side - Login Form */}
       <div className="flex items-center justify-center flex-1 p-8 bg-white">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center">
@@ -197,14 +245,6 @@ const LoginForm: React.FC = () => {
                   </FormItem>
                 )}
               />
-              {/* <div className="flex items-center justify-between">
-                <Link
-                  to="/forgot-password"
-                  className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
-                >
-                  Quên mật khẩu?
-                </Link>
-              </div> */}
               <Button
                 type="submit"
                 disabled={loading}
@@ -212,9 +252,25 @@ const LoginForm: React.FC = () => {
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                    <svg
+                      className="animate-spin h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                      ></path>
                     </svg>
                     Đang đăng nhập...
                   </span>
