@@ -142,47 +142,6 @@ const Body: React.FC = () => {
         </div>
       </section>
 
-      {/* Registration Form Widget
-      <div className="fixed bottom-4 right-4 z-50">
-        <div className="bg-white rounded-lg shadow-xl p-6 w-80 border">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-800">ĐĂNG KÝ NHẬN BÁO GIÁ</h3>
-            <Calendar className="w-5 h-5 text-red-600" />
-          </div>
-
-          <form className="space-y-4">
-            <div>
-              <input
-                type="text"
-                placeholder="Họ và tên"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
-              />
-            </div>
-            <div>
-              <input
-                type="tel"
-                placeholder="Số điện thoại"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-600"
-              />
-            </div>
-            <div>
-              <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-600 text-gray-600">
-                <option>Chọn dịch vụ</option>
-                <option>Xét nghiệm ADN cha con</option>
-                <option>Xét nghiệm ADN anh em</option>
-                <option>Xét nghiệm ADN ông bà cháu</option>
-              </select>
-            </div>
-            <button
-              type="submit"
-              className="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg font-semibold transition-colors"
-            >
-              Gửi thông tin
-            </button>
-          </form>
-        </div>
-      </div> */}
-
       {/* Services Section */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">

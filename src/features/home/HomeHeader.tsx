@@ -2,9 +2,11 @@ import type React from "react";
 import { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
+import { routes } from "@/shared/config/routes";
 
 const Header: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
+  const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -23,11 +25,16 @@ const Header: React.FC = () => {
 
   // Hàm xử lý cuộn mượt đến footer
   const scrollToFooter = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault(); // Ngăn hành vi mặc định của thẻ <a>
+    e.preventDefault();
     const footer = document.getElementById("footer");
     if (footer) {
       footer.scrollIntoView({ behavior: "smooth" });
     }
+  };
+
+  // Toggle dropdown cho Dịch vụ
+  const toggleServiceDropdown = () => {
+    setIsServiceDropdownOpen(!isServiceDropdownOpen);
   };
 
   return (
@@ -52,29 +59,69 @@ const Header: React.FC = () => {
           {/* Navigation với hiệu ứng slide-in */}
           <nav className="hidden lg:flex items-center space-x-8">
             {[
-              { label: "Giới thiệu", hasDropdown: true },
-              { label: "Dịch vụ", hasDropdown: true },
-              { label: "Bảng giá", hasDropdown: true },
-              { label: "Hướng dẫn", hasDropdown: true },
+              { label: "Giới thiệu", hasDropdown: false },
+              {
+                label: "Dịch vụ",
+                hasDropdown: true,
+                dropdownItems: [
+                  { label: "Xét nghiệm ADN Cha-Con", to: routes.adnChaCon },
+                  { label: "Xét nghiệm ADN Khai Sinh", to: routes.adnKhaiSinh },
+                ],
+              },
+              { label: "Bảng giá", hasDropdown: false },
+              { label: "Hướng dẫn", hasDropdown: false },
               { label: "Tin tức", hasDropdown: false },
               { label: "Hỏi đáp", hasDropdown: false },
               { label: "Liên hệ", hasDropdown: false },
             ].map((item, index) => (
-              <a
+              <div
                 key={item.label}
-                href={item.label === "Liên hệ" ? "#footer" : "#"}
-                onClick={item.label === "Liên hệ" ? scrollToFooter : undefined}
-                className={`text-gray-700 hover:text-red-600 font-medium flex items-center transition-transform duration-300 hover:scale-105 animate-slideInDown animate-delay-${index * 100}`}
+                className="relative group"
+                onMouseEnter={item.hasDropdown ? toggleServiceDropdown : undefined}
+                onMouseLeave={item.hasDropdown ? toggleServiceDropdown : undefined}
               >
-                {item.label}
-                {item.hasDropdown && (
-                  <ChevronDown className="w-4 h-4 ml-1 transition-transform duration-300 group-hover:rotate-180" />
+                {item.hasDropdown ? (
+                  <span
+                    className={`text-gray-700 hover:text-red-600 font-medium flex items-center transition-transform duration-300 hover:scale-105 animate-slideInDown animate-delay-${
+                      index * 100
+                    } cursor-pointer`}
+                  >
+                    {item.label}
+                    <ChevronDown
+                      className={`w-4 h-4 ml-1 transition-transform duration-300 ${
+                        isServiceDropdownOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </span>
+                ) : (
+                  <a
+                    href={item.label === "Liên hệ" ? "#footer" : "#"}
+                    onClick={item.label === "Liên hệ" ? scrollToFooter : undefined}
+                    className={`text-gray-700 hover:text-red-600 font-medium flex items-center transition-transform duration-300 hover:scale-105 animate-slideInDown animate-delay-${
+                      index * 100
+                    }`}
+                  >
+                    {item.label}
+                  </a>
                 )}
-              </a>
+                {item.hasDropdown && isServiceDropdownOpen && (
+                  <div className="absolute top-full left-0 mt-2 bg-white shadow-lg rounded-md py-2 w-48 z-50">
+                    {item.dropdownItems?.map((dropdownItem) => (
+                      <Link
+                        key={dropdownItem.label}
+                        to={dropdownItem.to}
+                        className="block px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors duration-200"
+                      >
+                        {dropdownItem.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </nav>
 
-          {/* Right side buttons với hiệu ứng rotate cho Search */}
+          {/* Right side buttons */}
           <div className="flex items-center space-x-4">
             <Link
               to="/login"
