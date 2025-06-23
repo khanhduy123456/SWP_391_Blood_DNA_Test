@@ -6,6 +6,8 @@ const ENDPOINT = {
   GET_ALL_KITS: "/Kit",
   PAGINATION_KITS: "/Kit/paged",
   CREATE_KIT: "/Kit",
+  UPDATE_KIT: (id: number) => `/Kit/${id}`, 
+  DELETE_KIT: (id: number) => `/Kit/${id}`,
 };
 
 export const getAllKits = async (): Promise<Kit[]> => {
@@ -53,6 +55,45 @@ export const createKit = async (kitData: { name: string; description: string }):
     return response.data as Kit;
   } catch (error) {
     console.error("Error creating Kit:", error);
+    throw error;
+  }
+};
+
+export const updateKit = async (
+  id: number,
+  kitData: { name: string; description: string }
+): Promise<string> => {
+  try {
+    const response = await axiosClient.put(ENDPOINT.UPDATE_KIT(id), kitData, {
+      headers: {
+        Accept: "text/plain",
+        "Content-Type": "application/json",
+      },
+    });
+
+    return response.data; 
+  } catch (error) {
+    console.error(`Error updating Kit with ID ${id}:`, error);
+    throw error;
+  }
+};
+
+
+
+export const deleteKit = async (id: number): Promise<void> => {
+  try {
+    const response = await axiosClient.delete(ENDPOINT.DELETE_KIT(id), {
+      headers: {
+        Accept: "*/*",
+      },
+    });
+
+    if (response.status !== 200) {
+      throw new Error("Xoá Kit thất bại.");
+    }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    console.error("Lỗi khi xoá Kit:", error.response?.data || error.message);
     throw error;
   }
 };

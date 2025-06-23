@@ -1,20 +1,22 @@
 'use client';
 
-import { useEffect, useState } from "react";
-import { MoreVertical, Pencil } from "lucide-react";
-import type { Kit, PagedKitResponse } from "../types/kit";
-import { getPagedKits } from "../api/kit.api";
-import { AddKitModal } from "./addKitPopup";
-import toast from "react-hot-toast";
+import { useEffect, useState } from 'react';
+import { MoreVertical, Pencil } from 'lucide-react';
+import type { Kit, PagedKitResponse } from '../types/kit';
+import { getPagedKits, deleteKit } from '../api/kit.api';
+import { AddKitModal } from './addKitPopup';
+import toast from 'react-hot-toast';
+import { UpdateKitModal } from './updateKit';
+import { Toaster } from 'react-hot-toast';
 
 function formatDateTime(dateString: string) {
   const date = new Date(dateString);
-  return date.toLocaleString("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+  return date.toLocaleString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
     hour12: false,
   });
 }
@@ -33,6 +35,8 @@ function KitManagement() {
   const [error, setError] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [isAddKitModalOpen, setAddKitModalOpen] = useState(false);
+  const [selectedKit, setSelectedKit] = useState<Kit | null>(null);
+  const [isUpdateModalOpen, setUpdateModalOpen] = useState(false);
 
   const fetchKits = async (pageNumber: number, pageSize: number) => {
     setLoading(true);
@@ -40,9 +44,8 @@ function KitManagement() {
     try {
       const data = await getPagedKits(pageNumber, pageSize);
       setKitsData(data);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err) {
-      setError("Lấy dữ liệu bộ KIT thất bại");
+    } catch {
+      setError('Lấy dữ liệu bộ KIT thất bại');
     } finally {
       setLoading(false);
     }
@@ -65,17 +68,16 @@ function KitManagement() {
   };
 
   const handleKitCreated = (kit: Kit) => {
-    console.log("New kit created:", kit);
-    // Gọi lại API để làm mới danh sách kits
     fetchKits(kitsData.pageNumber, kitsData.pageSize);
     toast.success(`"${kit.name}" đã được tạo thành công!`, {
       duration: 3000,
-      position: "bottom-right",
+      position: 'bottom-right',
     });
   };
 
   return (
     <div className="p-10 bg-gradient-to-br from-green-50 to-white min-h-screen">
+      <Toaster />
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-bold text-green-700">Quản lý bộ KIT</h2>
@@ -139,13 +141,38 @@ function KitManagement() {
                             <div className="absolute right-5 z-10 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
                               <button
                                 onClick={() => {
-                                  alert(`Chỉnh sửa: ${kit.name}`);
+                                  setSelectedKit(kit);
+                                  setUpdateModalOpen(true);
                                   setOpenMenuId(null);
                                 }}
                                 className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm"
                               >
                                 <Pencil size={16} />
                                 Chỉnh sửa
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  setOpenMenuId(null);
+                                  try {
+                                    await deleteKit(kit.id);
+                                    toast.success(`"${kit.name}" đã được xoá thành công!`, {
+                                      duration: 3000,
+                                      position: 'bottom-right',
+                                    });
+                                    fetchKits(kitsData.pageNumber, kitsData.pageSize);
+                                  } catch {
+                                    toast.error('Xoá kit thất bại!', {
+                                      duration: 3000,
+                                      position: 'bottom-right',
+                                    });
+                                  }
+                                }}
+                                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-100 text-sm text-red-600 border-t border-gray-100"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                Xóa
                               </button>
                             </div>
                           )}
@@ -175,8 +202,8 @@ function KitManagement() {
                       disabled={!kitsData.hasPreviousPage}
                       className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
                         kitsData.hasPreviousPage
-                          ? "bg-green-600 text-white hover:bg-green-700"
-                          : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                          ? 'bg-green-600 text-white hover:bg-green-700'
+                          : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                       }`}
                     >
                       Trang trước
@@ -186,8 +213,8 @@ function KitManagement() {
                       disabled={!kitsData.hasNextPage}
                       className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
                         kitsData.hasNextPage
-                          ? "bg-green-600 text-white hover:bg-green-700"
-                          : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                          ? 'bg-green-600 text-white hover:bg-green-700'
+                          : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                       }`}
                     >
                       Trang sau
@@ -204,6 +231,23 @@ function KitManagement() {
           onClose={() => setAddKitModalOpen(false)}
           onKitCreated={handleKitCreated}
         />
+
+        {selectedKit && (
+          <UpdateKitModal
+            isOpen={isUpdateModalOpen}
+            onClose={() => setUpdateModalOpen(false)}
+            kitId={selectedKit.id}
+            initialName={selectedKit.name}
+            initialDescription={selectedKit.description}
+            onSuccess={() => {
+              fetchKits(kitsData.pageNumber, kitsData.pageSize);
+              toast.success(`"${selectedKit.name}" đã được cập nhật!`, {
+                duration: 3000,
+                position: 'bottom-right',
+              });
+            }}
+          />
+        )}
       </div>
     </div>
   );
