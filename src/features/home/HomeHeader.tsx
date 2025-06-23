@@ -47,13 +47,14 @@ const Header: React.FC = () => {
         <div className="flex items-center justify-between">
           {/* Logo với hiệu ứng pulse */}
           <div className="flex items-center">
-            <div className="flex items-center space-x-2 animate-pulse">
-              <div className="text-2xl font-bold">
-                <span className="text-red-600">DNA</span>
-                <span className="text-gray-800 block text-sm font-normal">TESTINGS</span>
-              </div>
-              <div className="text-xs text-gray-500 ml-2">RAPID TESTING SYSTEM</div>
-            </div>
+            <Link to="/" className="flex items-center space-x-2 animate-pulse">
+  <div className="text-2xl font-bold">
+    <span className="text-red-600">DNA</span>
+    <span className="text-gray-800 block text-sm font-normal">TESTINGS</span>
+  </div>
+  <div className="text-xs text-gray-500 ml-2">RAPID TESTING SYSTEM</div>
+</Link>
+
           </div>
 
           {/* Navigation với hiệu ứng slide-in */}
@@ -64,8 +65,8 @@ const Header: React.FC = () => {
                 label: "Dịch vụ",
                 hasDropdown: true,
                 dropdownItems: [
-                  { label: "Xét nghiệm ADN Cha-Con", to: routes.adnChaCon },
-                  { label: "Xét nghiệm ADN Khai Sinh", to: routes.adnKhaiSinh },
+                  { label: "Xét Nghiệm Làm Giấy Khai Sinh", to: routes.adnKhaiSinh },
+                  { label: "Xét Nghiệm Huyết Thống Cha/Mẹ-Con", to: routes.adnChaCon },
                 ],
               },
               { label: "Bảng giá", hasDropdown: false },
