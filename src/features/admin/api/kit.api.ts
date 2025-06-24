@@ -24,13 +24,13 @@ export const getAllKits = async (): Promise<Kit[]> => {
     throw error;
   }
 };
-export const getPagedKits = async (pageNumber: number, pageSize: number): Promise<PagedKitResponse> => {
+export const getPagedKits = async (pageNumber: number, pageSize: number, sortOrder?: 'desc' | 'asc'): Promise<PagedKitResponse> => {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const params: any = { pageNumber, pageSize };
+    if (sortOrder) params.sortOrder = sortOrder;
     const response = await axiosClient.get(ENDPOINT.PAGINATION_KITS, {
-      params: {
-        pageNumber,
-        pageSize,
-      },
+      params,
       headers: {
         Accept: "*/*",
       },

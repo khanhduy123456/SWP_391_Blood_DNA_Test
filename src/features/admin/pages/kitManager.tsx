@@ -8,6 +8,7 @@ import { AddKitModal } from './addKitPopup';
 import toast from 'react-hot-toast';
 import { UpdateKitModal } from './updateKit';
 import { Toaster } from 'react-hot-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/shared/ui/dialog';
 
 function formatDateTime(dateString: string) {
   const date = new Date(dateString);
@@ -37,12 +38,19 @@ function KitManagement() {
   const [isAddKitModalOpen, setAddKitModalOpen] = useState(false);
   const [selectedKit, setSelectedKit] = useState<Kit | null>(null);
   const [isUpdateModalOpen, setUpdateModalOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; kit: Kit | null }>({ open: false, kit: null });
+  const [sortOrder, setSortOrder] = useState<'default' | 'desc' | 'asc'>('default');
 
-  const fetchKits = async (pageNumber: number, pageSize: number) => {
+  const fetchKits = async (pageNumber: number, pageSize: number, order: 'default' | 'desc' | 'asc' = sortOrder) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getPagedKits(pageNumber, pageSize);
+      let data;
+      if (order === 'default') {
+        data = await getPagedKits(pageNumber, pageSize);
+      } else {
+        data = await getPagedKits(pageNumber, pageSize, order);
+      }
       setKitsData(data);
     } catch {
       setError('Lấy dữ liệu bộ KIT thất bại');
@@ -52,8 +60,8 @@ function KitManagement() {
   };
 
   useEffect(() => {
-    fetchKits(kitsData.pageNumber, kitsData.pageSize);
-  }, [kitsData.pageNumber, kitsData.pageSize]);
+    fetchKits(kitsData.pageNumber, kitsData.pageSize, sortOrder);
+  }, [kitsData.pageNumber, kitsData.pageSize, sortOrder]);
 
   const handlePreviousPage = () => {
     if (kitsData.hasPreviousPage) {
@@ -81,12 +89,23 @@ function KitManagement() {
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-bold text-green-700">Quản lý bộ KIT</h2>
-          <button
-            onClick={() => setAddKitModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 shadow transition"
-          >
-            + Thêm KIT
-          </button>
+          <div className="flex items-center gap-2">
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as 'default' | 'desc' | 'asc')}
+              className="px-3 py-2 border rounded-xl text-sm text-gray-700 bg-white shadow-none"
+            >
+              <option value="default">Mặc định</option>
+              <option value="desc">Mới nhất lên trên</option>
+              <option value="asc">Cũ nhất lên trên</option>
+            </select>
+            <button
+              onClick={() => setAddKitModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 shadow transition"
+            >
+              + Thêm KIT
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto relative z-0 rounded-xl shadow-lg border border-green-100 bg-white min-h-[300px]">
@@ -151,21 +170,9 @@ function KitManagement() {
                                 Chỉnh sửa
                               </button>
                               <button
-                                onClick={async () => {
+                                onClick={() => {
+                                  setConfirmDelete({ open: true, kit });
                                   setOpenMenuId(null);
-                                  try {
-                                    await deleteKit(kit.id);
-                                    toast.success(`"${kit.name}" đã được xoá thành công!`, {
-                                      duration: 3000,
-                                      position: 'bottom-right',
-                                    });
-                                    fetchKits(kitsData.pageNumber, kitsData.pageSize);
-                                  } catch {
-                                    toast.error('Xoá kit thất bại!', {
-                                      duration: 3000,
-                                      position: 'bottom-right',
-                                    });
-                                  }
                                 }}
                                 className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-100 text-sm text-red-600 border-t border-gray-100"
                               >
@@ -248,6 +255,49 @@ function KitManagement() {
             }}
           />
         )}
+        <Dialog open={confirmDelete.open} onOpenChange={(open) => setConfirmDelete({ open, kit: open ? confirmDelete.kit : null })}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Bạn có chắc chắn muốn xóa bộ KIT này?</DialogTitle>
+            </DialogHeader>
+            <div className="py-2 text-gray-700">
+              {confirmDelete.kit && (
+                <span>Bạn sẽ xóa bộ KIT: <b>{confirmDelete.kit.name}</b></span>
+              )}
+            </div>
+            <DialogFooter className="mt-4">
+              <button
+                className="px-4 py-2 rounded bg-gray-200 text-gray-700 hover:bg-gray-300"
+                onClick={() => setConfirmDelete({ open: false, kit: null })}
+              >
+                Hủy
+              </button>
+              <button
+                className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+                onClick={async () => {
+                  if (confirmDelete.kit) {
+                    try {
+                      await deleteKit(confirmDelete.kit.id);
+                      toast.success(`"${confirmDelete.kit.name}" đã được xoá thành công!`, {
+                        duration: 3000,
+                        position: 'bottom-right',
+                      });
+                      fetchKits(kitsData.pageNumber, kitsData.pageSize);
+                    } catch {
+                      toast.error('Xoá kit thất bại!', {
+                        duration: 3000,
+                        position: 'bottom-right',
+                      });
+                    }
+                  }
+                  setConfirmDelete({ open: false, kit: null });
+                }}
+              >
+                Xác nhận xóa
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
