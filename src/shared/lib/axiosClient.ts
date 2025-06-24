@@ -12,6 +12,11 @@ const axiosServices = axios.create({
 axiosServices.interceptors.request.use(
   function (config) {
     config.headers["Content-Type"] = "application/json";
+    // Thêm token vào header nếu có
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`;
+    }
     return config;
   },
   function (error) {

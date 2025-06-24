@@ -17,6 +17,7 @@ import SampleMethodManagement from '@/features/admin/pages/sampleManager';
 import HomeBody from '@/features/home/HomeBody';
 import ADNChaCon from '@/pages/services/priceservice/khaisinh';
 import NotFound from '@/features/auth/pages/notFound';
+import BlogApp from '@/features/admin/pages/blogpost/blogApp';
 // Thêm các component cho Staff, Manager, Client
 
 export const AppRouter = () => {
@@ -43,6 +44,7 @@ export const AppRouter = () => {
             <Route path="/admin/dashboard" element={<Dashboard />} />
             <Route path="/admin/users" element={<UserManagement />} />
             <Route path="/admin/kits" element={<KitManagement />} />
+            <Route path='/admin/blogs' element={<BlogApp/>} />
             <Route path="/admin/sample-methods" element={<SampleMethodManagement />} />
             <Route path="/admin/booking-modal" element={<BookingModal isOpen={true} onClose={() => {}} />} />
           </Route>
