@@ -14,9 +14,9 @@ export interface Register {
 // Reverse mapping để convert từ number về string (optional)
 export const UserRoleNames = {
   1: 'Admin',
-  0: 'Staff',
-  2: 'Client',
-  3: 'Manager'
+  3: 'Staff',
+  2: 'Customer',
+  4: 'Manager'
 } as const;
 
 export type UserRole = "customer" | "staff" | "manager" | "admin";
