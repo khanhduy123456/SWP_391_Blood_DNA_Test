@@ -52,7 +52,13 @@ const SidebarStaff = ({ role }: SidebarProps) => {
         },
         {
           name: "Sample Method Management",
-          href: "/admin/sample-methods",
+          href: "/staff/sample-methods",
+          icon: <BadgeCheck size={size} />,
+          position: "top",
+        },
+        {
+          name: "Quản lí dịch vụ xét nghiệm",
+          href: "/staff/services",
           icon: <BadgeCheck size={size} />,
           position: "top",
         },
