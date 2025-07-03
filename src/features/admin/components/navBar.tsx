@@ -40,19 +40,19 @@ const Sidebar = ({ role }: SidebarProps) => {
         },
         {
           name: "User Management",
-          href: "/users",
+          href: "/admin/users",
           icon: <User size={size} />,
           position: "top",
         },
         {
           name: "Kit Test Management",
-          href: "/kits",
+          href: "/admin/kits",
           icon: <TestTubeDiagonal size={size} />,
           position: "top",
         },
         {
           name: "Sample Method Management",
-          href: "/sample-methods",
+          href: "/admin/sample-methods",
           icon: <BadgeCheck size={size} />,
           position: "top",
         },
