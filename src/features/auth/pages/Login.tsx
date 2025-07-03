@@ -6,8 +6,9 @@ import { useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
 import * as z from "zod";
-import { loginApi } from "../api/login.api";
+import { loginApi, loginApiGoogle } from "../api/login.api";
 import toast from "react-hot-toast";
 import { UserRoleNames } from "../types/auths.types";
 
@@ -66,7 +67,7 @@ const LoginForm: React.FC = () => {
         case "Manager":
           navigate("/manager/test-management");
           break;
-        case "Client":
+        case "Customer":
           navigate("/customer");
           break;
         default:
@@ -95,6 +96,48 @@ const LoginForm: React.FC = () => {
         });
         toast.error(errorMessage);
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Xử lý đăng nhập Google
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleGoogleLoginSuccess = async (credentialResponse: any) => {
+    setLoading(true);
+    try {
+      const response: LoginResponse = await loginApiGoogle(credentialResponse.credential);
+      const userRole = UserRoleNames[response.roleId as keyof typeof UserRoleNames];
+      if (!userRole) {
+        throw new Error("Role không hợp lệ");
+      }
+
+      localStorage.setItem("accessToken", response.accessToken);
+      localStorage.setItem("refreshToken", response.refreshToken);
+      localStorage.setItem("userRole", userRole);
+
+      switch (userRole) {
+        case "Admin":
+          navigate("/admin/dashboard");
+          break;
+        case "Staff":
+          navigate("/staff");
+          break;
+        case "Manager":
+          navigate("/(manager/test-management");
+          break;
+        case "Customer":
+          navigate("/customer");
+          break;
+        default:
+          toast.error("Role không hợp lệ");
+          break;
+      }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      console.error("Đăng nhập Google thất bại:", error);
+      const errorMessage = error.response?.data?.message || "Đăng nhập Google thất bại";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -279,6 +322,20 @@ const LoginForm: React.FC = () => {
                 )}
               </Button>
             </form>
+            {/* Thêm nút đăng nhập Google */}
+            <div className="flex items-center justify-center mt-4">
+              <GoogleLogin
+                onSuccess={handleGoogleLoginSuccess}
+                onError={() => {
+                  toast.error("Đăng nhập Google thất bại");
+                  setLoading(false);
+                }}
+                useOneTap
+                theme="filled_blue"
+                size="large"
+                text="signin_with"
+              />
+            </div>
           </FormProvider>
 
           <div className="text-center mt-6">

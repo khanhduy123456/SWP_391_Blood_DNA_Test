@@ -1,4 +1,4 @@
-import Sidebar from '@/features/admin/components/navBar';
+import Sidebar from '@/features/admin/components/navBarAdmin';
 import { Outlet } from 'react-router-dom';
 
 const AdminLayout = ({ role }: { role: string }) => {

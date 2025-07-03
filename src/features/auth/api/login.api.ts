@@ -2,6 +2,7 @@ import axiosClient from "@/shared/lib/axiosClient";
 
 const ENDPOINT = {
   LOGIN: "/account/login",
+  LOGIN_GOOGLE: "/account/google-login",
 };
 
 // Hàm kiểm tra lỗi là AxiosError
@@ -31,7 +32,7 @@ export const loginApi = async (email: string, password: string) => {
       return response.data;
     } catch (error) {
       attempts++;
-        // Kiểm tra xem lỗi có phải là AxiosError và có mã lỗi ECONNABORTED (timeout) không
+      // Kiểm tra xem lỗi có phải là AxiosError và có mã lỗi ECONNABORTED (timeout) không
       if (isAxiosError(error) && error.code === "ECONNABORTED") {
         console.warn(`Timeout occurred. Retrying (${attempts}/${maxRetries})...`);
         if (attempts >= maxRetries) {
@@ -39,6 +40,39 @@ export const loginApi = async (email: string, password: string) => {
         }
       } else {
         // Lỗi khác: dừng retry và ném lỗi luôn
+        throw error;
+      }
+    }
+  }
+};
+
+export const loginApiGoogle = async (idToken: string) => {
+  const maxRetries = 3;
+  const timeout = 10000;
+  let attempts = 0;
+
+  while (attempts < maxRetries) {
+    try {
+      const response = await axiosClient.post(
+        ENDPOINT.LOGIN_GOOGLE,
+        { idToken },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "text/plain", // Giữ đồng bộ với loginApi
+          },
+          timeout,
+        }
+      );
+      return response.data;
+    } catch (error) {
+      attempts++;
+      if (isAxiosError(error) && error.code === "ECONNABORTED") {
+        console.warn(`Google login timeout. Retrying (${attempts}/${maxRetries})...`);
+        if (attempts >= maxRetries) {
+          throw new Error("Server quá chậm khi đăng nhập Google, thử lại sau.");
+        }
+      } else {
         throw error;
       }
     }
