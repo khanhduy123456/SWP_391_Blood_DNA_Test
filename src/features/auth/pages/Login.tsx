@@ -59,7 +59,7 @@ const LoginForm: React.FC = () => {
       // Phân quyền dựa trên role
       switch (userRole) {
         case "Admin":
-          navigate("/admin/dashboard");
+          navigate("/admin/users");
           break;
         case "Staff":
           navigate("/staff");
