@@ -78,7 +78,7 @@ const LoginForm: React.FC = () => {
     } catch (error: any) {
       console.error("Đăng nhập thất bại:", error);
       // Xử lý lỗi chi tiết hơn
-      if (error.response?.status === 401) {
+      if (error.response?.status === 400 || error.response?.status === 401) {
         form.setError("password", {
           type: "manual",
           message: "Email hoặc mật khẩu không đúng",
@@ -89,12 +89,10 @@ const LoginForm: React.FC = () => {
           message: "Quá nhiều yêu cầu, vui lòng thử lại sau",
         });
       } else {
-        const errorMessage = error.message || "Đăng nhập thất bại, vui lòng kiểm tra lại";
         form.setError("password", {
           type: "manual",
-          message: errorMessage,
+          message: "Đăng nhập thất bại, vui lòng kiểm tra lại thông tin",
         });
-        toast.error(errorMessage);
       }
     } finally {
       setLoading(false);
@@ -136,7 +134,7 @@ const LoginForm: React.FC = () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Đăng nhập Google thất bại:", error);
-      const errorMessage = error.response?.data?.message || "Đăng nhập Google thất bại";
+      const errorMessage = "Đăng nhập Google thất bại, vui lòng thử lại";
       toast.error(errorMessage);
     } finally {
       setLoading(false);

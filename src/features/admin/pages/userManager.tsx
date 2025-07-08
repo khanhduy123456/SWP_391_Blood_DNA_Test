@@ -12,23 +12,26 @@ import {
   DialogTitle,
   DialogClose,
 } from "@/shared/ui/dialog";
+import { AddUserDialog } from "./addStaff";
+import { Toaster } from "react-hot-toast";
+import { UserProfilePopup } from "./editUserDialog";
 
 function UserManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
-
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
-
   const [roleFilter, setRoleFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
-
   const [confirmDialog, setConfirmDialog] = useState<{
     userId: number | null;
     action: "lock" | "unlock" | null;
   }>({ userId: null, action: null });
   const [loading, setLoading] = useState(false);
+  const [fetchUsersFn, setFetchUsersFn] = useState<() => void>(() => () => {});
+  const [editUserId, setEditUserId] = useState<number | null>(null); // State để mở popup
+  const [searchName, setSearchName] = useState("");
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -48,6 +51,7 @@ function UserManagement() {
     };
 
     fetchUsers();
+    setFetchUsersFn(() => fetchUsers);
   }, []);
 
   useEffect(() => {
@@ -55,6 +59,12 @@ function UserManagement() {
 
     if (roleFilter !== "all") {
       result = result.filter((user) => user.role === roleFilter);
+    }
+
+    if (searchName.trim() !== "") {
+      result = result.filter((user) =>
+        user.name.toLowerCase().includes(searchName.trim().toLowerCase())
+      );
     }
 
     if (sortOrder === "asc") {
@@ -65,7 +75,7 @@ function UserManagement() {
 
     setFilteredUsers(result);
     setCurrentPage(1);
-  }, [users, roleFilter, sortOrder]);
+  }, [users, roleFilter, sortOrder, searchName]);
 
   const convertRoleToVietnamese = (role: string): string => {
     switch (role) {
@@ -76,7 +86,7 @@ function UserManagement() {
       case "Staff":
         return "Nhân viên";
       case "Unknown":
-        return "Không xác định";
+        return "Quản lý";
       default:
         return role;
     }
@@ -123,11 +133,11 @@ function UserManagement() {
 
   return (
     <div className="p-10 bg-gradient-to-br from-blue-50 to-white min-h-screen">
+      <Toaster position="top-right" />
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-bold text-blue-700">Quản lý người dùng</h2>
           <div className="flex gap-2 items-center">
-            {/* Sort order filter */}
             <select
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
@@ -136,8 +146,6 @@ function UserManagement() {
               <option value="desc">Mới nhất lên trên</option>
               <option value="asc">Cũ nhất lên trên</option>
             </select>
-
-            {/* Role filter */}
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
@@ -147,14 +155,23 @@ function UserManagement() {
               <option value="Admin">Admin</option>
               <option value="Nhân viên">Nhân viên</option>
               <option value="Người dùng">Người dùng</option>
-              <option value="Không xác định">Không xác định</option>
+              <option value="Quản lý">Quản lý</option>
             </select>
-
-            {/* Add user */}
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow transition">
-              + Thêm người dùng
-            </button>
+            <AddUserDialog
+              onSuccess={() => {
+                fetchUsersFn();
+              }}
+            />
           </div>
+        </div>
+        <div className="mb-4 flex justify-end">
+          <input
+            type="text"
+            placeholder="Tìm kiếm theo tên người dùng..."
+            value={searchName}
+            onChange={e => setSearchName(e.target.value)}
+            className="px-4 py-2 border rounded-xl text-sm w-72 shadow focus:outline-none focus:ring-2 focus:ring-blue-200"
+          />
         </div>
 
         <div className="overflow-x-auto relative z-0 rounded-xl shadow-lg border border-blue-100 bg-white">
@@ -199,11 +216,11 @@ function UserManagement() {
                     {openMenuId === user.userId && (
                       <div className="absolute right-5 z-10 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
                         <button
+                          className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm"
                           onClick={() => {
-                            alert(`Chỉnh sửa: ${user.name}`);
+                            setEditUserId(user.userId);
                             setOpenMenuId(null);
                           }}
-                          className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm"
                         >
                           <Pencil size={16} />
                           Chỉnh sửa tài khoản
@@ -278,7 +295,6 @@ function UserManagement() {
         </div>
       </div>
 
-      {/* Popup xác nhận khóa/mở khóa tài khoản */}
       {confirmDialog.userId && (
         <Dialog open={!!confirmDialog.userId} onOpenChange={(open) => {
           if (!open) setConfirmDialog({ userId: null, action: null });
@@ -310,6 +326,19 @@ function UserManagement() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+      )}
+
+      {/* Popup chỉnh sửa tài khoản */}
+      {editUserId !== null && (
+        <UserProfilePopup
+          userId={editUserId}
+          open={editUserId !== null}
+          onClose={() => setEditUserId(null)}
+          onSuccess={() => {
+            setEditUserId(null);
+            fetchUsersFn();
+          }}
+        />
       )}
     </div>
   );
