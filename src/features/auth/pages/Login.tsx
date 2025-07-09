@@ -25,6 +25,25 @@ const formSchema = z.object({
   password: z.string().min(1, "Vui lòng nhập mật khẩu"),
 });
 
+// Thêm hàm parseJwt để decode accessToken
+function parseJwt(token: string) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(function (c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
+
 const LoginForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
@@ -51,10 +70,17 @@ const LoginForm: React.FC = () => {
         throw new Error("Role không hợp lệ");
       }
 
-      // Lưu accessToken, refreshToken và role vào localStorage
+      // Decode accessToken để lấy id và username
+      const payload = parseJwt(response.accessToken);
+      const userId = payload && payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
+      const username = payload && payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"];
+
+      // Lưu accessToken, refreshToken, role, id, username vào localStorage
       localStorage.setItem("accessToken", response.accessToken);
       localStorage.setItem("refreshToken", response.refreshToken);
       localStorage.setItem("userRole", userRole);
+      if (userId) localStorage.setItem("userId", userId);
+      if (username) localStorage.setItem("username", username);
 
       // Phân quyền dựa trên role
       switch (userRole) {
@@ -110,9 +136,16 @@ const LoginForm: React.FC = () => {
         throw new Error("Role không hợp lệ");
       }
 
+      // Decode accessToken để lấy id và username
+      const payload = parseJwt(response.accessToken);
+      const userId = payload && payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
+      const username = payload && payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"];
+
       localStorage.setItem("accessToken", response.accessToken);
       localStorage.setItem("refreshToken", response.refreshToken);
       localStorage.setItem("userRole", userRole);
+      if (userId) localStorage.setItem("userId", userId);
+      if (username) localStorage.setItem("username", username);
 
       switch (userRole) {
         case "Admin":

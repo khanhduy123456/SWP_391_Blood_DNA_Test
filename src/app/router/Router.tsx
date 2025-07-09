@@ -19,6 +19,7 @@ import ADNChaCon from '@/pages/services/priceservice/khaisinh';
 import NotFound from '@/features/auth/pages/notFound';
 import StaffLayout from '@/pages/staff/page/staffLayout';
 import ServiceManager from '@/pages/staff/component/serviceManager';
+import CusLayout from '@/pages/customer/cusLayout';
 // import BlogApp from '@/features/admin/pages/blogpost/blogApp';
 // Thêm các component cho Staff, Manager, Client
 
@@ -48,7 +49,7 @@ export const AppRouter = () => {
             <Route path="/admin/kits" element={<KitManagement />} />
             {/* <Route path='/admin/blogs' element={<BlogApp/>} /> */}
             <Route path="/admin/sample-methods" element={<SampleMethodManagement />} />
-            <Route path="/admin/booking-modal" element={<BookingModal isOpen={true} onClose={() => {}} />} />
+            <Route path="/admin/booking-modal" element={<BookingModal isOpen={true} onClose={() => {}} userId={1} />} />
           </Route>
 
           {/* Staff Routes */}
@@ -63,10 +64,11 @@ export const AppRouter = () => {
             <Route path="/manager/test-management" element={<TestManagement />} />
           </Route> */}
 
-          {/* Client Routes */}
-          {/* <Route element={<ClientLayout role="Client" />}>
-            <Route path="/customer" element={<CustomerDashboard />} />
-          </Route> */}
+          {/* Customer Routes */}
+          <Route element={<CusLayout role="Customer" />}>
+            {/* <Route path="/customer" element={<CustomerDashboard />} /> */}
+            <Route path="/customer/kits" element={<KitManagement />} />
+          </Route>
         </Route>
 
         {/* Catch all */}

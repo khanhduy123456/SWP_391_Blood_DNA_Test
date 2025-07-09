@@ -4,7 +4,12 @@ import { ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { routes } from "@/shared/config/routes";
 
-const Header: React.FC = () => {
+// Thêm interface cho props
+interface HeaderProps {
+  user?: { id?: string; username?: string };
+}
+
+const Header: React.FC<HeaderProps> = ({ user }) => {
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
   const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState<boolean>(false);
 
@@ -124,12 +129,18 @@ const Header: React.FC = () => {
 
           {/* Right side buttons */}
           <div className="flex items-center space-x-4">
-            <Link
-              to="/login"
-              className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-full transition-colors duration-300"
-            >
-              Đăng nhập
-            </Link>
+            {user && user.username ? (
+              <span className="text-gray-700 font-semibold">
+                Xin chào {user.username}
+              </span>
+            ) : (
+              <Link
+                to="/login"
+                className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-full transition-colors duration-300"
+              >
+                Đăng nhập
+              </Link>
+            )}
           </div>
         </div>
       </div>

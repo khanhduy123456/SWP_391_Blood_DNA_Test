@@ -1,89 +1,106 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   X,
   CalendarIcon,
   ClockIcon,
-  MapPinIcon,
-  UserIcon,
-  PhoneIcon,
-  MailIcon,
-  HomeIcon,
-  BuildingIcon,
   AlertCircleIcon,
   CheckCircleIcon,
+  HomeIcon,
+  BuildingIcon,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
-import { RadioGroup } from "@radix-ui/react-dropdown-menu";
 import { Label } from "@/shared/ui/label";
-import { Input } from "@/shared/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { Textarea } from "@/shared/ui/textarea";
+import { RadioGroup } from "@radix-ui/react-dropdown-menu";
+import { Input } from "@/shared/ui/input";
 
-interface BookingData {
-  serviceType: "home" | "clinic";
+interface UserData {
+  userId: number;
   name: string;
   email: string;
   phone: string;
   address: string;
+}
+
+interface BookingData {
+  serviceType: "home" | "clinic";
   preferredDate: string;
   preferredTime: string;
   notes: string;
   testType: string;
 }
 
+interface ApiRequestData {
+  userId: number;
+  serviceId: number;
+  priorityId: number;
+  sampleMethodId: number;
+  appointmentTime: string;
+}
+
 interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
+  userId: number; // Thêm userId vào props
   onSubmit?: (bookingData: BookingData) => void;
 }
 
-export const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSubmit }) => {
+export const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, userId, onSubmit }) => {
   const [formData, setFormData] = useState<BookingData>({
     serviceType: "home",
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
     preferredDate: "",
     preferredTime: "",
     notes: "",
     testType: "general",
   });
-
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [fetchingUser, setFetchingUser] = useState(false);
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState<Partial<Record<keyof BookingData, string>>>({});
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const testTypes = [
-    { id: "general", name: "Xét nghiệm tổng quát", price: "500.000đ" },
-    { id: "covid", name: "Test COVID-19", price: "300.000đ" },
-    { id: "blood", name: "Xét nghiệm máu", price: "400.000đ" },
-    { id: "urine", name: "Xét nghiệm nước tiểu", price: "200.000đ" },
-    { id: "genetic", name: "Xét nghiệm gen", price: "2.000.000đ" },
+    { id: "general", name: "Xét nghiệm tổng quát", price: "500.000đ", serviceId: 1 },
+    { id: "covid", name: "Test COVID-19", price: "300.000đ", serviceId: 2 },
+    { id: "blood", name: "Xét nghiệm máu", price: "400.000đ", serviceId: 3 },
+    { id: "urine", name: "Xét nghiệm nước tiểu", price: "200.000đ", serviceId: 4 },
+    { id: "genetic", name: "Xét nghiệm gen", price: "2.000.000đ", serviceId: 5 },
   ];
 
   const timeSlots = [
-    "08:00",
-    "08:30",
-    "09:00",
-    "09:30",
-    "10:00",
-    "10:30",
-    "11:00",
-    "11:30",
-    "14:00",
-    "14:30",
-    "15:00",
-    "15:30",
-    "16:00",
-    "16:30",
-    "17:00",
+    "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+    "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00",
   ];
+
+  // Lấy thông tin người dùng khi modal mở
+  useEffect(() => {
+    if (isOpen && userId) {
+      const fetchUserData = async () => {
+        setFetchingUser(true);
+        try {
+          const response = await fetch(`/api/account/${userId}`);
+          if (!response.ok) {
+            throw new Error("Không thể lấy thông tin người dùng");
+          }
+          const data: UserData = await response.json();
+          setUserData(data);
+          setFetchError(null);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (error) {
+          setFetchError("Không thể lấy thông tin người dùng, vui lòng thử lại");
+        } finally {
+          setFetchingUser(false);
+        }
+      };
+      fetchUserData();
+    }
+  }, [isOpen, userId]);
 
   const handleInputChange = (field: keyof BookingData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
     setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
@@ -97,13 +114,9 @@ export const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onS
 
   const validateStep2 = () => {
     const newErrors: Partial<Record<keyof BookingData, string>> = {};
-    if (!formData.name) newErrors.name = "Vui lòng nhập họ và tên";
-    if (!formData.phone) newErrors.phone = "Vui lòng nhập số điện thoại";
-    else if (!/^\d{10}$/.test(formData.phone)) newErrors.phone = "Số điện thoại không hợp lệ";
-    if (!formData.email) newErrors.email = "Vui lòng nhập email";
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Email không hợp lệ";
-    if (formData.serviceType === "home" && !formData.address)
-      newErrors.address = "Vui lòng nhập địa chỉ";
+    if (!userData) newErrors.notes = "Không có thông tin người dùng";
+    if (formData.serviceType === "home" && !userData?.address)
+      newErrors.notes = "Vui lòng cung cấp địa chỉ cho dịch vụ tại nhà";
     if (!formData.preferredDate) newErrors.preferredDate = "Vui lòng chọn ngày";
     if (!formData.preferredTime) newErrors.preferredTime = "Vui lòng chọn thời gian";
     setErrors(newErrors);
@@ -111,10 +124,35 @@ export const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onS
   };
 
   const handleSubmit = async () => {
-    if (!validateStep2()) return;
+    if (!validateStep2() || !userData) return;
     setLoading(true);
+
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const selectedTest = testTypes.find((test) => test.id === formData.testType);
+      const appointmentTime = new Date(
+        `${formData.preferredDate}T${formData.preferredTime}:00.000Z`
+      ).toISOString();
+
+      const apiData: ApiRequestData = {
+        userId: userData.userId,
+        serviceId: selectedTest ? selectedTest.serviceId : 1,
+        priorityId: 1, // Giả định priorityId
+        sampleMethodId: formData.serviceType === "home" ? 1 : 2,
+        appointmentTime,
+      };
+
+      const response = await fetch("/api/ExRequest", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(apiData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Lỗi khi gửi yêu cầu đến API");
+      }
+
       onSubmit?.(formData);
       setStep(3);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -128,10 +166,6 @@ export const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onS
   const resetForm = () => {
     setFormData({
       serviceType: "home",
-      name: "",
-      email: "",
-      phone: "",
-      address: "",
       preferredDate: "",
       preferredTime: "",
       notes: "",
@@ -139,6 +173,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onS
     });
     setStep(1);
     setErrors({});
+    setFetchError(null);
   };
 
   const handleClose = () => {
@@ -188,7 +223,25 @@ export const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onS
         </CardHeader>
 
         <CardContent className="p-6">
-          {step === 1 && (
+          {fetchingUser && (
+            <div className="text-center py-8">
+              <div className="w-8 h-8 border-2 border-blue-900/30 border-t-blue-900 rounded-full animate-spin mx-auto"></div>
+              <p className="text-slate-600 mt-4">Đang tải thông tin người dùng...</p>
+            </div>
+          )}
+          {fetchError && (
+            <div className="text-center py-8">
+              <AlertCircleIcon className="w-16 h-16 text-red-500 mx-auto mb-4" />
+              <p className="text-red-500">{fetchError}</p>
+              <Button
+                onClick={handleClose}
+                className="bg-blue-900 hover:bg-blue-800 text-white px-8 py-3 mt-4"
+              >
+                Đóng
+              </Button>
+            </div>
+          )}
+          {!fetchingUser && !fetchError && step === 1 && (
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-semibold text-blue-900 mb-4">Chọn loại xét nghiệm</h3>
@@ -291,141 +344,85 @@ export const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onS
             </div>
           )}
 
-          {step === 2 && (
+          {!fetchingUser && !fetchError && step === 2 && (
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-blue-900">Thông tin đặt lịch</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="name"
-                    className="text-sm font-semibold text-blue-900 flex items-center"
-                  >
-                    <UserIcon className="w-4 h-4 mr-2" />
-                    Họ và Tên *
-                  </Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
-                    placeholder="Nhập họ và tên"
-                    className={errors.name ? "border-red-500" : ""}
-                  />
-                  {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="phone"
-                    className="text-sm font-semibold text-blue-900 flex items-center"
-                  >
-                    <PhoneIcon className="w-4 h-4 mr-2" />
-                    Số điện thoại *
-                  </Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange("phone", e.target.value)}
-                    placeholder="Nhập số điện thoại"
-                    className={errors.phone ? "border-red-500" : ""}
-                  />
-                  {errors.phone && <p className="text-red-500 text-sm">{errors.phone}</p>}
-                </div>
-
-                <div className="space-y-2 md:col-span-2">
-                  <Label
-                    htmlFor="email"
-                    className="text-sm font-semibold text-blue-900 flex items-center"
-                  >
-                    <MailIcon className="w-4 h-4 mr-2" />
-                    Email *
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
-                    placeholder="Nhập địa chỉ email"
-                    className={errors.email ? "border-red-500" : ""}
-                  />
-                  {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
-                </div>
-
-                {formData.serviceType === "home" && (
-                  <div className="space-y-2 md:col-span-2">
-                    <Label
-                      htmlFor="address"
-                      className="text-sm font-semibold text-blue-900 flex items-center"
-                    >
-                      <MapPinIcon className="w-4 h-4 mr-2" />
-                      Địa chỉ nhận kit *
-                    </Label>
-                    <Input
-                      id="address"
-                      type="text"
-                      value={formData.address}
-                      onChange={(e) => handleInputChange("address", e.target.value)}
-                      placeholder="Nhập địa chỉ nhận bộ kit xét nghiệm"
-                      className={errors.address ? "border-red-500" : ""}
-                    />
-                    {errors.address && <p className="text-red-500 text-sm">{errors.address}</p>}
+              <div className="space-y-4">
+                {userData && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-semibold text-blue-900">Họ và Tên</Label>
+                      <p className="text-slate-700">{userData.name}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-semibold text-blue-900">Số điện thoại</Label>
+                      <p className="text-slate-700">{userData.phone}</p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label className="text-sm font-semibold text-blue-900">Email</Label>
+                      <p className="text-slate-700">{userData.email}</p>
+                    </div>
+                    {formData.serviceType === "home" && (
+                      <div className="md:col-span-2">
+                        <Label className="text-sm font-semibold text-blue-900">Địa chỉ nhận kit</Label>
+                        <p className="text-slate-700">{userData.address || "Không có địa chỉ"}</p>
+                      </div>
+                    )}
                   </div>
                 )}
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="preferredDate"
-                    className="text-sm font-semibold text-blue-900 flex items-center"
-                  >
-                    <CalendarIcon className="w-4 h-4 mr-2" />
-                    Ngày mong muốn *
-                  </Label>
-                  <Input
-                    id="preferredDate"
-                    type="date"
-                    value={formData.preferredDate}
-                    onChange={(e) => handleInputChange("preferredDate", e.target.value)}
-                    min={new Date().toISOString().split("T")[0]}
-                    className={errors.preferredDate ? "border-red-500" : ""}
-                  />
-                  {errors.preferredDate && (
-                    <p className="text-red-500 text-sm">{errors.preferredDate}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="preferredTime"
-                    className="text-sm font-semibold text-blue-900 flex items-center"
-                  >
-                    <ClockIcon className="w-4 h-4 mr-2" />
-                    Thời gian mong muốn *
-                  </Label>
-                  <Select
-                    value={formData.preferredTime}
-                    onValueChange={(value) => handleInputChange("preferredTime", value)}
-                  >
-                    <SelectTrigger
-                      id="preferredTime"
-                      className={errors.preferredTime ? "border-red-500" : ""}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="preferredDate"
+                      className="text-sm font-semibold text-blue-900 flex items-center"
                     >
-                      <SelectValue placeholder="Chọn thời gian" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {timeSlots.map((time) => (
-                        <SelectItem key={time} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.preferredTime && (
-                    <p className="text-red-500 text-sm">{errors.preferredTime}</p>
-                  )}
+                      <CalendarIcon className="w-4 h-4 mr-2" />
+                      Ngày mong muốn *
+                    </Label>
+                    <Input
+                      id="preferredDate"
+                      type="date"
+                      value={formData.preferredDate}
+                      onChange={(e) => handleInputChange("preferredDate", e.target.value)}
+                      min={new Date().toISOString().split("T")[0]}
+                      className={errors.preferredDate ? "border-red-500" : ""}
+                    />
+                    {errors.preferredDate && (
+                      <p className="text-red-500 text-sm">{errors.preferredDate}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="preferredTime"
+                      className="text-sm font-semibold text-blue-900 flex items-center"
+                    >
+                      <ClockIcon className="w-4 h-4 mr-2" />
+                      Thời gian mong muốn *
+                    </Label>
+                    <Select
+                      value={formData.preferredTime}
+                      onValueChange={(value) => handleInputChange("preferredTime", value)}
+                    >
+                      <SelectTrigger
+                        id="preferredTime"
+                        className={errors.preferredTime ? "border-red-500" : ""}
+                      >
+                        <SelectValue placeholder="Chọn thời gian" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {timeSlots.map((time) => (
+                          <SelectItem key={time} value={time}>
+                            {time}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.preferredTime && (
+                      <p className="text-red-500 text-sm">{errors.preferredTime}</p>
+                    )}
+                  </div>
                 </div>
-
-                <div className="space-y-2 md:col-span-2">
+                <div className="space-y-2">
                   <Label
                     htmlFor="notes"
                     className="text-sm font-semibold text-blue-900 flex items-center"
@@ -436,14 +433,15 @@ export const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onS
                   <Textarea
                     id="notes"
                     value={formData.notes}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleInputChange("notes", e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                      handleInputChange("notes", e.target.value)
+                    }
                     placeholder="Nhập lưu ý hoặc yêu cầu đặc biệt (nếu có)"
                     className="h-24"
                   />
                   {errors.notes && <p className="text-red-500 text-sm">{errors.notes}</p>}
                 </div>
               </div>
-
               <div className="flex justify-between">
                 <Button
                   onClick={() => setStep(1)}
@@ -454,7 +452,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onS
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={loading}
+                  disabled={loading || !userData}
                   className="bg-blue-900 hover:bg-blue-800 text-white px-8 py-3"
                 >
                   {loading ? (
@@ -470,7 +468,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onS
             </div>
           )}
 
-          {step === 3 && (
+          {!fetchingUser && !fetchError && step === 3 && (
             <div className="text-center py-8">
               <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto mb-4" />
               <h3 className="text-2xl font-bold text-green-600 mb-2">Đặt lịch thành công!</h3>
@@ -483,8 +481,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onS
                   <strong>Mã đặt lịch:</strong> BL{Date.now().toString().slice(-6)}
                 </p>
                 <p className="text-sm text-blue-800 mt-1">
-                  <strong>Thời gian:</strong> {formData.preferredDate} lúc{" "}
-                  {formData.preferredTime}
+                  <strong>Thời gian:</strong> {formData.preferredDate} lúc {formData.preferredTime}
                 </p>
               </div>
               <Button
