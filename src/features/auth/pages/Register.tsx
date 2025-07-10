@@ -21,6 +21,8 @@ const RegisterForm: React.FC = () => {
   const [registeredEmail, setRegisteredEmail] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState<boolean>(false);
+  const [pendingRegisterData, setPendingRegisterData] = useState<Register | null>(null);
   const navigate = useNavigate();
 
   const form = useForm<Register>({
@@ -50,12 +52,16 @@ const RegisterForm: React.FC = () => {
       const response = await registerApi(registerData);
       console.log("Đăng ký thành công", response);
       setRegisteredEmail(values.email);
-      setShowSuccessModal(true);
+      setShowSuccessModal(false); // Đóng popup xác nhận nếu còn mở
+      setShowConfirmDialog(false); // Đóng popup xác nhận nếu còn mở
       form.reset();
-      toast.success("Đăng ký thành công!", {
-        duration: 4000,
+      toast.success("Đăng ký thành công! Đang chuyển tới trang đăng nhập...", {
+        duration: 2000,
         position: "top-right",
       });
+      setTimeout(() => {
+        navigate("/login");
+      }, 1200);
     } catch (error: unknown) {
       console.error("Đăng ký thất bại", error);
       let errorMessage = "Đăng ký thất bại, vui lòng kiểm tra lại";
@@ -85,6 +91,27 @@ const RegisterForm: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Khi bấm submit form, show dialog xác nhận thay vì gọi luôn handleRegister
+  const handleFormSubmit = (values: Register) => {
+    setPendingRegisterData(values);
+    setShowConfirmDialog(true);
+  };
+
+  // Khi xác nhận OK trên dialog
+  const handleConfirmRegister = async () => {
+    if (pendingRegisterData) {
+      setShowConfirmDialog(false);
+      await handleRegister(pendingRegisterData);
+      setPendingRegisterData(null);
+    }
+  };
+
+  // Khi huỷ trên dialog
+  const handleCancelRegister = () => {
+    setShowConfirmDialog(false);
+    setPendingRegisterData(null);
   };
 
   const handleGoToLogin = () => {
@@ -182,7 +209,7 @@ const RegisterForm: React.FC = () => {
           </div>
           
           <FormProvider {...form}>
-            <form onSubmit={form.handleSubmit(handleRegister)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
                 name="fullName"
@@ -463,6 +490,26 @@ const RegisterForm: React.FC = () => {
               className="bg-green-600 hover:bg-green-700"
             >
               Đi đến Đăng nhập
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm Register Dialog */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-blue-700">Xác nhận đăng ký</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 text-gray-700">
+            Thông tin đăng ký này sẽ được sử dụng để đặt lịch xét nghiệm. Vui lòng kiểm tra kỹ trước khi đăng ký.
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCancelRegister}>
+              Huỷ
+            </Button>
+            <Button onClick={handleConfirmRegister} className="bg-green-600 hover:bg-green-700">
+              OK
             </Button>
           </DialogFooter>
         </DialogContent>

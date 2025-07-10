@@ -33,7 +33,7 @@ const SidebarCustomer = ({ role }: SidebarProps) => {
       return [
         {
           name: "Đơn đặt lịch xét nghiệm",
-          href: "/user/classify-bookings",
+          href: "/user/booking-modal",
           icon: <CalendarRange size={size} />,
           position: "top",
         },

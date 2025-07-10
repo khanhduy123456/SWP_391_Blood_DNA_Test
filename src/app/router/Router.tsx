@@ -12,7 +12,7 @@ import Dashboard from '@/features/admin/pages/dashboard';
 import UserManagement from '@/features/admin/pages/userManager';
 import KitManagement from '@/features/admin/pages/kitManager';
 import AdminLayout from '@/pages/admin/adminLayout';
-import { BookingModal } from '@/pages/services/components/booking';
+import { BookingModal } from '@/pages/customer/components/booking';
 import SampleMethodManagement from '@/features/admin/pages/sampleManager';
 import HomeBody from '@/features/home/HomeBody';
 import ADNChaCon from '@/pages/services/priceservice/khaisinh';
@@ -68,6 +68,7 @@ export const AppRouter = () => {
           <Route element={<CusLayout role="Customer" />}>
             {/* <Route path="/customer" element={<CustomerDashboard />} /> */}
             <Route path="/customer/kits" element={<KitManagement />} />
+            <Route path="/customer/booking-modal" element={<BookingModal isOpen={true} onClose={() => {}} userId={1} />} />
           </Route>
         </Route>
 
