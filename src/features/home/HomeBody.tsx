@@ -1,11 +1,29 @@
 import type React from "react";
-// import { Calendar } from "lucide-react";
+import { useState } from "react";
 import ImageSlider from "./imageslide";
 import TestimonialsCarousel from "./TestimonialsCarousel";
+import { useNavigate } from "react-router-dom";
+import { BookingModal } from "@/pages/customer/components/bookingPopup";
 
 const Body: React.FC = () => {
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const navigate = useNavigate();
+
+  // Lấy userId từ localStorage
+  const userId = localStorage.getItem("userId");
+
+  const handleBookingClick = () => {
+    if (!userId) {
+      navigate("/login");
+    } else {
+      setIsBookingOpen(true);
+    }
+  };
+
   return (
     <>
+      {/* Booking Modal */}
+      <BookingModal isOpen={isBookingOpen} onClose={() => setIsBookingOpen(false)} userId={userId ? Number(userId) : 1} />
       {/* Image Slider */}
       <div className="w-screen">
         <div className="mx-auto">
@@ -40,8 +58,11 @@ const Body: React.FC = () => {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 mb-16">
-              <button className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors">
-                Tư vấn miễn phí
+              <button
+                className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors"
+                onClick={handleBookingClick}
+              >
+                 Đặt lịch ngay
               </button>
               <button className="border-2 border-gray-300 text-gray-700 hover:border-red-600 hover:text-red-600 px-8 py-4 rounded-lg font-semibold text-lg transition-colors">
                 Xem dịch vụ

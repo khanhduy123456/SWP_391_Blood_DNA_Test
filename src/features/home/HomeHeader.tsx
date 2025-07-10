@@ -1,7 +1,7 @@
 import type React from "react";
 import { useState, useEffect } from "react";
-import { ChevronDown } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ChevronDown, LogOut } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { routes } from "@/shared/config/routes";
 
 // Thêm interface cho props
@@ -12,6 +12,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ user }) => {
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
   const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState<boolean>(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -40,6 +41,22 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
   // Toggle dropdown cho Dịch vụ
   const toggleServiceDropdown = () => {
     setIsServiceDropdownOpen(!isServiceDropdownOpen);
+  };
+
+  // Hàm xử lý logout
+  const handleLogout = () => {
+    // Xóa tất cả thông tin đăng nhập khỏi localStorage
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("username");
+    
+    // Chuyển về trang chủ
+    navigate("/");
+    
+    // Reload trang để cập nhật trạng thái
+    window.location.reload();
   };
 
   return (
@@ -130,9 +147,18 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
           {/* Right side buttons */}
           <div className="flex items-center space-x-4">
             {user && user.username ? (
-              <span className="text-gray-700 font-semibold">
-                Xin chào {user.username}
-              </span>
+              <div className="flex items-center space-x-2">
+                <span className="text-red-600 font-semibold">
+                  Xin chào {user.username}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors duration-200"
+                  title="Đăng xuất"
+                >
+                  <LogOut size={16} />
+                </button>
+              </div>
             ) : (
               <Link
                 to="/login"

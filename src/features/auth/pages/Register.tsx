@@ -52,8 +52,8 @@ const RegisterForm: React.FC = () => {
       const response = await registerApi(registerData);
       console.log("Đăng ký thành công", response);
       setRegisteredEmail(values.email);
-      setShowSuccessModal(false); // Đóng popup xác nhận nếu còn mở
-      setShowConfirmDialog(false); // Đóng popup xác nhận nếu còn mở
+      setShowSuccessModal(false); 
+      setShowConfirmDialog(false); 
       form.reset();
       toast.success("Đăng ký thành công! Đang chuyển tới trang đăng nhập...", {
         duration: 2000,

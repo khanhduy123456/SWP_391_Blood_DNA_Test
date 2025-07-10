@@ -1,6 +1,7 @@
 // components/Sidebar.tsx
 import { Button } from "@/shared/ui/button";
 import {
+  CalendarDays,
     CalendarRange,
   TestTubeDiagonal,
   User,
@@ -32,14 +33,20 @@ const SidebarCustomer = ({ role }: SidebarProps) => {
     if (role === "Customer") {
       return [
         {
-          name: "Đơn đặt lịch xét nghiệm",
-          href: "/user/booking-modal",
+          name: "Đặt lịch xét nghiệm",
+          href: "/customer/booking-page",
           icon: <CalendarRange size={size} />,
           position: "top",
         },
         {
+          name: "Lịch sử đặt lịch",
+          href: "/customer/booking-history",
+          icon: <CalendarDays size={size} />,
+          position: "top",
+        },
+        {
           name: "Chỉnh sửa tài khoản",
-          href: "/manager/profile'",
+          href: "/customer/profile'",
           icon: <User size={size} />,
           position: "top",
         },
