@@ -121,12 +121,33 @@ export const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) =
     });
   };
 
+  // Helper: tạo danh sách các mốc giờ 30 phút từ 07:00 đến 17:00
+  const timeOptions: string[] = [];
+  for (let h = 7; h <= 17; h++) {
+    for (let m = 0; m < 60; m += 30) {
+      const hour = h.toString().padStart(2, '0');
+      const min = m.toString().padStart(2, '0');
+      timeOptions.push(`${hour}:${min}`);
+    }
+  }
+  // Helper: kiểm tra ngày có phải quá khứ không
+  const isPastDate = (dateStr: string) => {
+    if (!dateStr) return false;
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const picked = new Date(dateStr);
+    picked.setHours(0,0,0,0);
+    return picked < today;
+  };
+
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!formData.serviceId) newErrors.serviceId = "Vui lòng chọn dịch vụ";
     if (!formData.sampleMethodId) newErrors.sampleMethodId = "Vui lòng chọn phương pháp lấy mẫu";
     if (!formData.appointmentDate) newErrors.appointmentDate = "Vui lòng chọn ngày";
+    if (formData.appointmentDate && isPastDate(formData.appointmentDate)) newErrors.appointmentDate = "Không được chọn ngày trong quá khứ";
     if (!formData.appointmentTime) newErrors.appointmentTime = "Vui lòng chọn giờ";
+    if (formData.appointmentTime && !timeOptions.includes(formData.appointmentTime)) newErrors.appointmentTime = "Giờ không hợp lệ";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -255,17 +276,23 @@ export const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) =
                   <Input
                     type="date"
                     value={formData.appointmentDate}
+                    min={new Date().toISOString().split('T')[0]}
                     onChange={(e) => handleInputChange("appointmentDate", e.target.value)}
                   />
                   {errors.appointmentDate && <div className="text-red-500 text-sm">{errors.appointmentDate}</div>}
                 </div>
                 <div className="flex-1">
                   <Label>Giờ hẹn</Label>
-                  <Input
-                    type="time"
+                  <select
                     value={formData.appointmentTime}
-                    onChange={(e) => handleInputChange("appointmentTime", e.target.value)}
-                  />
+                    onChange={e => handleInputChange("appointmentTime", e.target.value)}
+                    className="h-12 text-base border border-blue-300 rounded-md w-full focus:ring-2 focus:ring-blue-400 px-3"
+                  >
+                    <option value="">Chọn giờ</option>
+                    {timeOptions.map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
                   {errors.appointmentTime && <div className="text-red-500 text-sm">{errors.appointmentTime}</div>}
                 </div>
               </div>

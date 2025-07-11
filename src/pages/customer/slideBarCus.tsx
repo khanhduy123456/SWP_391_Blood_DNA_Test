@@ -40,13 +40,13 @@ const SidebarCustomer = ({ role }: SidebarProps) => {
         },
         {
           name: "Lịch sử đặt lịch",
-          href: "/customer/booking-history",
+          href: "/customer/booking-list",
           icon: <CalendarDays size={size} />,
           position: "top",
         },
         {
           name: "Chỉnh sửa tài khoản",
-          href: "/customer/profile'",
+          href: "/customer/profile",
           icon: <User size={size} />,
           position: "top",
         },

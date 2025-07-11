@@ -22,6 +22,7 @@ import ServiceManager from '@/pages/staff/component/serviceManager';
 import CusLayout from '@/pages/customer/cusLayout';
 import { BookingPage } from '@/pages/customer/components/booking';
 import Profile from '@/pages/customer/components/profile';
+import BookingList from '@/pages/customer/components/booking-list';
 // import BlogApp from '@/features/admin/pages/blogpost/blogApp';
 // Thêm các component cho Staff, Manager, Client
 
@@ -71,6 +72,7 @@ export const AppRouter = () => {
             {/* <Route path="/customer" element={<CustomerDashboard />} /> */}
             <Route path="/customer/kits" element={<KitManagement />} />
             <Route path="/customer/booking-page" element={<BookingPage />} />
+            <Route path="/customer/booking-list" element={<BookingList />} />
             <Route path="/customer/profile" element={<Profile />} />
             <Route path="/customer/booking-modal" element={<BookingModal isOpen={true} onClose={() => {}} userId={1} />} />
           </Route>

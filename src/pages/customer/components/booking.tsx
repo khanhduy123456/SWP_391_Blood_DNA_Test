@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import {
   CheckCircleIcon,
+  UserCircle2Icon,
+  FlaskConicalIcon,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
@@ -99,6 +101,26 @@ export const BookingPage: React.FC = () => {
     getAllService().then(setServices).catch(() => setServices([]));
   }, []);
 
+  // Helper: tạo danh sách các mốc giờ 30 phút từ 07:00 đến 17:00
+  const timeOptions: string[] = [];
+  for (let h = 7; h <= 17; h++) {
+    for (let m = 0; m < 60; m += 30) {
+      const hour = h.toString().padStart(2, '0');
+      const min = m.toString().padStart(2, '0');
+      timeOptions.push(`${hour}:${min}`);
+    }
+  }
+
+  // Helper: kiểm tra ngày có phải quá khứ không
+  const isPastDate = (dateStr: string) => {
+    if (!dateStr) return false;
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const picked = new Date(dateStr);
+    picked.setHours(0,0,0,0);
+    return picked < today;
+  };
+
   const handleInputChange = (field: keyof BookingData, value: string | number) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => {
@@ -113,7 +135,10 @@ export const BookingPage: React.FC = () => {
     if (!formData.serviceId) newErrors.serviceId = "Vui lòng chọn dịch vụ";
     if (!formData.sampleMethodId) newErrors.sampleMethodId = "Vui lòng chọn phương pháp lấy mẫu";
     if (!formData.appointmentDate) newErrors.appointmentDate = "Vui lòng chọn ngày";
+    if (formData.appointmentDate && isPastDate(formData.appointmentDate)) newErrors.appointmentDate = "Không được chọn ngày trong quá khứ";
     if (!formData.appointmentTime) newErrors.appointmentTime = "Vui lòng chọn giờ";
+    // Kiểm tra giờ hợp lệ
+    if (formData.appointmentTime && !timeOptions.includes(formData.appointmentTime)) newErrors.appointmentTime = "Giờ không hợp lệ";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -158,36 +183,38 @@ export const BookingPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gray-100 flex flex-col">
-      <div className="max-w-4xl mx-auto mt-8 mb-8 w-full">
-        <Card className="w-full bg-white shadow-2xl border-0">
-          <CardHeader className="bg-gradient-to-r from-blue-900 to-blue-700 text-white p-8 rounded-t-lg">
-            <div className="flex flex-col items-center justify-center">
-              <h2 className="text-4xl font-bold mb-2">Đăng Ký Xét Nghiệm</h2>
-              <p className="text-white/90 text-lg">Chọn dịch vụ, phương pháp lấy mẫu và thời gian phù hợp</p>
-            </div>
+    <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 to-white flex flex-col py-8 px-2 md:px-0">
+      <div className="max-w-3xl mx-auto w-full">
+        <Card className="w-full bg-white/90 shadow-2xl border border-blue-100 rounded-2xl">
+          <CardHeader className="bg-gradient-to-r from-blue-900 to-blue-700 text-white p-8 rounded-t-2xl flex flex-col items-center justify-center gap-2">
+            <FlaskConicalIcon className="w-12 h-12 text-white mb-2" />
+            <h2 className="text-4xl font-extrabold mb-1 tracking-tight">Đăng ký xét nghiệm ADN</h2>
+            <p className="text-white/90 text-lg">Chọn dịch vụ, phương pháp lấy mẫu và thời gian phù hợp</p>
           </CardHeader>
-          <CardContent className="p-10 space-y-10">
+          <CardContent className="p-8 md:p-10 space-y-10">
             {userData && (
-              <div className="w-full flex flex-col items-center justify-center py-3 mb-4">
-                <div className="text-2xl font-bold text-blue-900 mb-2">Thông tin khách hàng</div>
-                <div className="w-full flex flex-col space-y-2 text-base text-gray-800 bg-gray-50 rounded-lg p-4 shadow-sm items-center">
-                  <div><span className="font-medium">Họ tên:</span> {userData.name}</div>
-                  <div><span className="font-medium">Email:</span> {userData.email}</div>
-                  <div><span className="font-medium">Số điện thoại:</span> {userData.phone}</div>
-                  <div><span className="font-medium">Địa chỉ:</span> {userData.address || <span className="italic text-gray-400">Chưa cập nhật</span>}</div>
+              <div className="w-full flex flex-col items-center justify-center py-2 mb-2">
+                <div className="text-2xl font-bold text-blue-900 mb-1 flex items-center gap-2">
+                  <UserCircle2Icon className="w-8 h-8 text-blue-700" />
+                  Thông tin khách hàng
+                </div>
+                <div className="w-full flex flex-row flex-wrap gap-4 text-base text-gray-800 bg-blue-50 rounded-lg p-4 shadow-sm items-center justify-between">
+                  <div className="flex-1 min-w-[180px]"><span className="font-medium">Họ tên:</span> {userData.name}</div>
+                  <div className="flex-1 min-w-[180px]"><span className="font-medium">Email:</span> {userData.email}</div>
+                  <div className="flex-1 min-w-[180px]"><span className="font-medium">Số điện thoại:</span> {userData.phone}</div>
+                  <div className="flex-1 min-w-[180px]"><span className="font-medium">Địa chỉ:</span> {userData.address || <span className="italic text-gray-400">Chưa cập nhật</span>}</div>
                 </div>
               </div>
             )}
             {step === 1 && (
               <>
                 <div className="space-y-6">
-                  <Label className="text-lg text-blue-900 font-semibold">Dịch vụ xét nghiệm</Label>
+                  <Label className="text-lg text-blue-900 font-semibold">Dịch vụ xét nghiệm <span className="text-red-500">*</span></Label>
                   <Select
                     value={formData.serviceId?.toString() || ""}
                     onValueChange={(val) => handleInputChange("serviceId", Number(val))}
                   >
-                    <SelectTrigger className="h-14 text-lg">
+                    <SelectTrigger className="h-14 text-lg border-blue-300 focus:ring-2 focus:ring-blue-400">
                       <SelectValue placeholder="Chọn dịch vụ" />
                     </SelectTrigger>
                     <SelectContent>
@@ -201,12 +228,12 @@ export const BookingPage: React.FC = () => {
                   {errors.serviceId && <div className="text-red-500 text-base">{errors.serviceId}</div>}
                 </div>
                 <div className="space-y-6">
-                  <Label className="text-lg text-blue-900 font-semibold">Phương pháp lấy mẫu</Label>
+                  <Label className="text-lg text-blue-900 font-semibold">Phương pháp lấy mẫu <span className="text-red-500">*</span></Label>
                   <Select
                     value={formData.sampleMethodId?.toString() || ""}
                     onValueChange={(val) => handleInputChange("sampleMethodId", Number(val))}
                   >
-                    <SelectTrigger className="h-14 text-lg">
+                    <SelectTrigger className="h-14 text-lg border-blue-300 focus:ring-2 focus:ring-blue-400">
                       <SelectValue placeholder="Chọn phương pháp lấy mẫu" />
                     </SelectTrigger>
                     <SelectContent>
@@ -219,25 +246,30 @@ export const BookingPage: React.FC = () => {
                   </Select>
                   {errors.sampleMethodId && <div className="text-red-500 text-base">{errors.sampleMethodId}</div>}
                 </div>
-                <div className="flex gap-8">
+                <div className="flex flex-col md:flex-row gap-8">
                   <div className="flex-1">
-                    <Label className="text-lg text-blue-900 font-semibold">Ngày hẹn</Label>
+                    <Label className="text-lg text-blue-900 font-semibold">Ngày hẹn <span className="text-red-500">*</span></Label>
                     <Input
                       type="date"
                       value={formData.appointmentDate}
+                      min={new Date().toISOString().split('T')[0]}
                       onChange={(e) => handleInputChange("appointmentDate", e.target.value)}
-                      className="h-12 text-lg"
+                      className="h-12 text-lg border-blue-300 focus:ring-2 focus:ring-blue-400"
                     />
                     {errors.appointmentDate && <div className="text-red-500 text-base">{errors.appointmentDate}</div>}
                   </div>
                   <div className="flex-1">
-                    <Label className="text-lg text-blue-900 font-semibold">Giờ hẹn</Label>
-                    <Input
-                      type="time"
+                    <Label className="text-lg text-blue-900 font-semibold">Giờ hẹn <span className="text-red-500">*</span></Label>
+                    <select
                       value={formData.appointmentTime}
-                      onChange={(e) => handleInputChange("appointmentTime", e.target.value)}
-                      className="h-12 text-lg"
-                    />
+                      onChange={e => handleInputChange("appointmentTime", e.target.value)}
+                      className="h-12 text-lg border border-blue-300 rounded-md w-full focus:ring-2 focus:ring-blue-400 px-3"
+                    >
+                      <option value="">Chọn giờ</option>
+                      {timeOptions.map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
                     {errors.appointmentTime && <div className="text-red-500 text-base">{errors.appointmentTime}</div>}
                   </div>
                 </div>
@@ -247,12 +279,12 @@ export const BookingPage: React.FC = () => {
                     value={formData.notes}
                     onChange={(e) => handleInputChange("notes", e.target.value)}
                     placeholder="Ghi chú cho nhân viên nếu có..."
-                    className="text-lg min-h-[56px]"
+                    className="text-lg min-h-[56px] border-blue-300 focus:ring-2 focus:ring-blue-400"
                   />
                 </div>
                 {errors.submit && <div className="text-red-500 text-base">{errors.submit}</div>}
                 <div className="flex justify-end">
-                  <Button onClick={handleSubmit} disabled={loading} className="h-14 px-10 text-lg">
+                  <Button onClick={handleSubmit} disabled={loading} className="h-14 px-10 text-lg bg-blue-700 hover:bg-blue-800 text-white font-bold shadow-md">
                     {loading ? "Đang đăng ký..." : "Đăng ký"}
                   </Button>
                 </div>
@@ -261,8 +293,12 @@ export const BookingPage: React.FC = () => {
             {step === 2 && success && (
               <div className="flex flex-col items-center justify-center space-y-6 py-16">
                 <CheckCircleIcon className="text-green-500 w-20 h-20" />
-                <div className="text-2xl font-semibold">Đăng ký thành công!</div>
-                <Button onClick={resetForm} className="h-12 px-8 text-lg">Đăng ký lại</Button>
+                <div className="text-2xl font-semibold text-blue-900">Đăng ký thành công!</div>
+                <div className="text-base text-gray-700 text-center max-w-md">
+                  Cảm ơn bạn đã đăng ký dịch vụ xét nghiệm ADN.<br/>
+                  Vui lòng kiểm tra lại thông tin đặt lịch trong email đã đăng ký hoặc trên điện thoại của bạn. Nếu có thắc mắc, hãy liên hệ với chúng tôi để được hỗ trợ.
+                </div>
+                <Button onClick={resetForm} className="h-12 px-8 text-lg bg-blue-700 hover:bg-blue-800 text-white font-bold shadow-md">Đăng ký lại</Button>
               </div>
             )}
           </CardContent>
