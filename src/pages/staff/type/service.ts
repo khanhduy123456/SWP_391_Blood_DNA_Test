@@ -5,6 +5,7 @@ export interface Service {
   requirements: string | null;
   type: string;
   price: number;
+  sampleMethodIds?: number[];
   createAt: string;
   updateAt: string;
 }

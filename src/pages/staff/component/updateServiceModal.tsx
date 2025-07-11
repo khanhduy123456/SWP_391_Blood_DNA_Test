@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,65 +12,75 @@ import { Input } from '@/shared/ui/input';
 import { Textarea } from '@/shared/ui/textarea';
 import { Button } from '@/shared/ui/button';
 import toast from 'react-hot-toast';
-import { createService, type CreateServicePayload } from '../api/service.api';
-import type { Service } from '../type/service';
+import { updateService } from '../api/service.api'; // đường dẫn tuỳ bạn
+import type { UpdateServicePayload } from '../api/service.api';
 
-interface AddServiceModalProps {
+interface UpdateServiceModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onServiceCreated: (service: Service) => void;
+  serviceId: number;
+  initialName: string;
+  initialDescription: string;
+  initialType: string;
+  initialPrice: number;
+  initialSampleMethodIds: number[];
+  onSuccess?: () => void;
 }
 
-export const AddServiceModal: React.FC<AddServiceModalProps> = ({
+export const UpdateServiceModal: React.FC<UpdateServiceModalProps> = ({
   isOpen,
   onClose,
-  onServiceCreated,
+  serviceId,
+  initialName,
+  initialDescription,
+  initialType,
+  initialPrice,
+  initialSampleMethodIds,
+  onSuccess,
 }) => {
-  const [formData, setFormData] = useState<CreateServicePayload>({
-    name: '',
-    description: '',
-    type: '',
-    price: 0,
-    sampleMethodIds: [],
+  const [formData, setFormData] = useState<UpdateServicePayload>({
+    name: initialName,
+    description: initialDescription,
+    type: initialType,
+    price: initialPrice,
+    sampleMethodIds: initialSampleMethodIds,
   });
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (field: keyof CreateServicePayload, value: string | number | number[]) => {
+  // Reset form mỗi khi mở lại
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        name: initialName,
+        description: initialDescription,
+        type: initialType,
+        price: initialPrice,
+        sampleMethodIds: initialSampleMethodIds,
+      });
+    }
+  }, [isOpen, initialName, initialDescription, initialType, initialPrice, initialSampleMethodIds]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleChange = (field: keyof UpdateServicePayload, value: any) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
 
-  const handleSubmit = async () => {
-    if (!formData.name.trim() || !formData.description.trim() || !formData.type.trim() || formData.price <= 0) {
-      toast.error('Vui lòng điền đầy đủ thông tin!', {
-        duration: 3000,
-        position: 'bottom-right',
-      });
-      return;
-    }
-
+  const handleUpdate = async () => {
     setLoading(true);
     try {
-      const newService = await createService(formData);
-      toast.success(`"${newService.name}" đã được tạo thành công!`, {
+      await updateService(serviceId, formData);
+      toast.success('Service đã được cập nhật thành công!', {
         duration: 3000,
         position: 'bottom-right',
       });
-      onServiceCreated(newService);
+      onSuccess?.();
       onClose();
-      // Reset form
-      setFormData({
-        name: '',
-        description: '',
-        type: '',
-        price: 0,
-        sampleMethodIds: [],
-      });
     } catch (error) {
-      console.error('Tạo Service thất bại:', error);
-      toast.error('Có lỗi xảy ra khi tạo Service', {
+      console.error('Cập nhật Service thất bại:', error);
+      toast.error('Có lỗi xảy ra khi cập nhật Service', {
         duration: 3000,
         position: 'bottom-right',
       });
@@ -79,29 +89,15 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
     }
   };
 
-  const handleClose = () => {
-    if (!loading) {
-      onClose();
-      // Reset form khi đóng
-      setFormData({
-        name: '',
-        description: '',
-        type: '',
-        price: 0,
-        sampleMethodIds: [],
-      });
-    }
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-green-700">
-            Thêm dịch vụ mới
+            Cập nhật dịch vụ
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 py-4">
+        <div className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Tên dịch vụ *</label>
             <Input
@@ -166,18 +162,18 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
         <DialogFooter className="mt-6">
           <Button
             variant="outline"
-            onClick={handleClose}
+            onClick={onClose}
             disabled={loading}
             className="px-6"
           >
             Hủy
           </Button>
           <Button
-            onClick={handleSubmit}
+            onClick={handleUpdate}
             disabled={loading}
             className="px-6 bg-green-600 hover:bg-green-700"
           >
-            {loading ? 'Đang tạo...' : 'Tạo dịch vụ'}
+            {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
           </Button>
         </DialogFooter>
       </DialogContent>

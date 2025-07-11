@@ -1,9 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Pencil, MoreVertical } from 'lucide-react';
+import { MoreVertical, Pencil } from 'lucide-react';
+import type { PagedServiceResponse } from '../api/service.api';
 import type { Service } from '../type/service';
-import { getPagedService, type PagedServiceResponse } from '../api/service.api';
+import { getPagedService, deleteService } from '../api/service.api';
+import { AddServiceModal } from './addService';
+import toast from 'react-hot-toast';
+import { UpdateServiceModal } from './updateServiceModal';
+import { Toaster } from 'react-hot-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/shared/ui/dialog';
 
 function formatDateTime(dateString: string) {
   const date = new Date(dateString);
@@ -18,25 +24,36 @@ function formatDateTime(dateString: string) {
 }
 
 function ServiceManager() {
-  const [services, setServices] = useState<Service[]>([]);
+  const [servicesData, setServicesData] = useState<PagedServiceResponse>({
+    items: [],
+    pageNumber: 1,
+    totalPages: 1,
+    totalCount: 0,
+    pageSize: 5,
+    hasPreviousPage: false,
+    hasNextPage: false,
+  });
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
-  const [pageNumber, setPageNumber] = useState<number>(1);
-  const [pageSize] = useState<number>(10);
-  const [totalPages, setTotalPages] = useState<number>(0);
-  const [totalRecords, setTotalRecords] = useState<number>(0);
+  const [isAddServiceModalOpen, setAddServiceModalOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [isUpdateModalOpen, setUpdateModalOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; service: Service | null }>({ open: false, service: null });
+  const [sortOrder, setSortOrder] = useState<'default' | 'desc' | 'asc'>('default');
 
-  const fetchServices = async () => {
+  const fetchServices = async (pageNumber: number, pageSize: number, order: 'default' | 'desc' | 'asc' = sortOrder) => {
     setLoading(true);
     setError(null);
     try {
-      const response: PagedServiceResponse = await getPagedService(pageNumber, pageSize);
-      setServices(response.data);
-      setTotalPages(response.totalPages);
-      setTotalRecords(response.totalRecords);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err) {
+      let data;
+      if (order === 'default') {
+        data = await getPagedService(pageNumber, pageSize);
+      } else {
+        data = await getPagedService(pageNumber, pageSize, order);
+      }
+      setServicesData(data);
+    } catch {
       setError('Lấy dữ liệu Service thất bại');
     } finally {
       setLoading(false);
@@ -44,26 +61,52 @@ function ServiceManager() {
   };
 
   useEffect(() => {
-    fetchServices();
-  }, [pageNumber]); // Gọi lại khi pageNumber thay đổi
+    fetchServices(servicesData.pageNumber, servicesData.pageSize, sortOrder);
+  }, [servicesData.pageNumber, servicesData.pageSize, sortOrder]);
 
   const handlePreviousPage = () => {
-    if (pageNumber > 1) {
-      setPageNumber(pageNumber - 1);
+    if (servicesData.hasPreviousPage) {
+      setServicesData({ ...servicesData, pageNumber: servicesData.pageNumber - 1 });
     }
   };
 
   const handleNextPage = () => {
-    if (pageNumber < totalPages) {
-      setPageNumber(pageNumber + 1);
+    if (servicesData.hasNextPage) {
+      setServicesData({ ...servicesData, pageNumber: servicesData.pageNumber + 1 });
     }
+  };
+
+  const handleServiceCreated = (service: Service) => {
+    fetchServices(servicesData.pageNumber, servicesData.pageSize);
+    toast.success(`"${service.name}" đã được tạo thành công!`, {
+      duration: 3000,
+      position: 'bottom-right',
+    });
   };
 
   return (
     <div className="p-10 bg-gradient-to-br from-green-50 to-white min-h-screen">
+      <Toaster />
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold text-green-700">Quản lý Các loại dịch vụ xét nghiệm/ Service</h2>
+          <h2 className="text-3xl font-bold text-green-700">Quản lý dịch vụ xét nghiệm</h2>
+          <div className="flex items-center gap-2">
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as 'default' | 'desc' | 'asc')}
+              className="px-3 py-2 border rounded-xl text-sm text-gray-700 bg-white shadow-none"
+            >
+              <option value="default">Mặc định</option>
+              <option value="desc">Mới nhất lên trên</option>
+              <option value="asc">Cũ nhất lên trên</option>
+            </select>
+            <button
+              onClick={() => setAddServiceModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 shadow transition"
+            >
+              + Thêm dịch vụ
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto relative z-0 rounded-xl shadow-lg border border-green-100 bg-white min-h-[300px]">
@@ -85,24 +128,29 @@ function ServiceManager() {
                 <thead>
                   <tr className="bg-green-100 text-green-700 uppercase text-xs tracking-wider">
                     <th className="py-3 px-5">ID</th>
-                    <th className="py-3 px-5">Tên</th>
+                    <th className="py-3 px-5">Tên dịch vụ</th>
                     <th className="py-3 px-5">Mô tả</th>
                     <th className="py-3 px-5">Loại</th>
-                    <th className="py-3 px-5">Giá</th>
+                    <th className="py-3 px-5">Giá (VNĐ)</th>
                     <th className="py-3 px-5">Ngày tạo</th>
+                    <th className="py-3 px-5">Cập nhật lần cuối</th>
                     <th className="py-3 px-5 text-center">Hành động</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {services.length > 0 ? (
-                    services.map((service: Service) => (
-                      <tr key={service.id} className="border-b hover:bg-green-50 transition">
+                  {servicesData.items.length > 0 ? (
+                    servicesData.items.map((service: Service) => (
+                      <tr
+                        key={service.id}
+                        className="border-b hover:bg-green-50 transition relative"
+                      >
                         <td className="py-3 px-5">{service.id}</td>
                         <td className="py-3 px-5 font-medium">{service.name}</td>
                         <td className="py-3 px-5">{service.description}</td>
                         <td className="py-3 px-5">{service.type}</td>
-                        <td className="py-3 px-5">{service.price}</td>
+                        <td className="py-3 px-5">{service.price.toLocaleString('vi-VN')}</td>
                         <td className="py-3 px-5">{formatDateTime(service.createAt)}</td>
+                        <td className="py-3 px-5">{formatDateTime(service.updateAt)}</td>
                         <td className="py-3 px-5 text-center relative">
                           <button
                             className="p-2 hover:bg-green-100 rounded-full"
@@ -117,13 +165,26 @@ function ServiceManager() {
                             <div className="absolute right-5 z-10 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
                               <button
                                 onClick={() => {
-                                  alert(`Chỉnh sửa: ${service.name}`);
+                                  setSelectedService(service);
+                                  setUpdateModalOpen(true);
                                   setOpenMenuId(null);
                                 }}
                                 className="w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sm"
                               >
                                 <Pencil size={16} />
                                 Chỉnh sửa
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setConfirmDelete({ open: true, service });
+                                  setOpenMenuId(null);
+                                }}
+                                className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-100 text-sm text-red-600 border-t border-gray-100"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                Xóa
                               </button>
                             </div>
                           )}
@@ -132,39 +193,40 @@ function ServiceManager() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={7} className="text-center py-6 text-gray-500">
-                        Không có Service nào.
+                      <td colSpan={8} className="text-center py-6 text-gray-500">
+                        Không có dịch vụ nào.
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
 
-              {/* Phân trang */}
-              {services.length > 0 && (
-                <div className="flex justify-between items-center py-4 px-5">
-                  <div className="text-sm text-gray-600">
-                    Hiển thị {services.length} / {totalRecords} bản ghi (Trang {pageNumber} / {totalPages})
+              {servicesData.items.length > 0 && (
+                <div className="flex justify-between items-center mt-4 px-5 py-3">
+                  <div>
+                    <p className="text-sm text-gray-600">
+                      Trang {servicesData.pageNumber} / {servicesData.totalPages} (Tổng: {servicesData.totalCount} dịch vụ)
+                    </p>
                   </div>
                   <div className="flex gap-2">
                     <button
                       onClick={handlePreviousPage}
-                      disabled={pageNumber === 1}
-                      className={`px-4 py-2 rounded-lg ${
-                        pageNumber === 1
-                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                          : 'bg-green-500 text-white hover:bg-green-600'
+                      disabled={!servicesData.hasPreviousPage}
+                      className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                        servicesData.hasPreviousPage
+                          ? 'bg-green-600 text-white hover:bg-green-700'
+                          : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                       }`}
                     >
                       Trang trước
                     </button>
                     <button
                       onClick={handleNextPage}
-                      disabled={pageNumber === totalPages}
-                      className={`px-4 py-2 rounded-lg ${
-                        pageNumber === totalPages
-                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                          : 'bg-green-500 text-white hover:bg-green-600'
+                      disabled={!servicesData.hasNextPage}
+                      className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                        servicesData.hasNextPage
+                          ? 'bg-green-600 text-white hover:bg-green-700'
+                          : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                       }`}
                     >
                       Trang sau
@@ -175,9 +237,79 @@ function ServiceManager() {
             </>
           )}
         </div>
+
+        <AddServiceModal
+          isOpen={isAddServiceModalOpen}
+          onClose={() => setAddServiceModalOpen(false)}
+          onServiceCreated={handleServiceCreated}
+        />
+
+        {selectedService && (
+          <UpdateServiceModal
+            isOpen={isUpdateModalOpen}
+            onClose={() => setUpdateModalOpen(false)}
+            serviceId={selectedService.id}
+            initialName={selectedService.name}
+            initialDescription={selectedService.description}
+            initialType={selectedService.type}
+            initialPrice={selectedService.price}
+                         initialSampleMethodIds={selectedService.sampleMethodIds || []}
+            onSuccess={() => {
+              fetchServices(servicesData.pageNumber, servicesData.pageSize);
+              toast.success(`"${selectedService.name}" đã được cập nhật!`, {
+                duration: 3000,
+                position: 'bottom-right',
+              });
+            }}
+          />
+        )}
+
+        <Dialog open={confirmDelete.open} onOpenChange={(open) => setConfirmDelete({ open, service: open ? confirmDelete.service : null })}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Bạn có chắc chắn muốn xóa dịch vụ này?</DialogTitle>
+            </DialogHeader>
+            <div className="py-2 text-gray-700">
+              {confirmDelete.service && (
+                <span>Bạn sẽ xóa dịch vụ: <b>{confirmDelete.service.name}</b></span>
+              )}
+            </div>
+            <DialogFooter className="mt-4">
+              <button
+                className="px-4 py-2 rounded bg-gray-200 text-gray-700 hover:bg-gray-300"
+                onClick={() => setConfirmDelete({ open: false, service: null })}
+              >
+                Hủy
+              </button>
+              <button
+                className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+                onClick={async () => {
+                  if (confirmDelete.service) {
+                    try {
+                      await deleteService(confirmDelete.service.id);
+                      toast.success(`"${confirmDelete.service.name}" đã được xoá thành công!`, {
+                        duration: 3000,
+                        position: 'bottom-right',
+                      });
+                      fetchServices(servicesData.pageNumber, servicesData.pageSize);
+                    } catch {
+                      toast.error('Xoá dịch vụ thất bại!', {
+                        duration: 3000,
+                        position: 'bottom-right',
+                      });
+                    }
+                  }
+                  setConfirmDelete({ open: false, service: null });
+                }}
+              >
+                Xác nhận xóa
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
 }
-
+   
 export default ServiceManager;
