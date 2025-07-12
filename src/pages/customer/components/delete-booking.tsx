@@ -5,6 +5,7 @@ import { Textarea } from "@/shared/ui/textarea";
 import { Label } from "@/shared/ui/label";
 import { deleteExRequest } from "../api/exRequest.api";
 import type { ExRequestResponse } from "../types/exRequestPaged";
+import type { Service } from "@/pages/staff/type/service";
 import { Trash2Icon, AlertTriangleIcon, XIcon } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -13,11 +14,18 @@ interface DeleteBookingProps {
   onClose: () => void;
   booking: ExRequestResponse | null;
   onDeleteSuccess: () => void;
+  services: Service[];
 }
 
-export default function DeleteBooking({ isOpen, onClose, booking, onDeleteSuccess }: DeleteBookingProps) {
+export default function DeleteBooking({ isOpen, onClose, booking, onDeleteSuccess, services }: DeleteBookingProps) {
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Lấy tên dịch vụ từ id
+  const getServiceName = (id: number) => {
+    const service = services.find(s => s.id === id);
+    return service ? service.name : `#${id}`;
+  };
 
   const handleDelete = async () => {
     if (!booking) return;
@@ -86,7 +94,7 @@ export default function DeleteBooking({ isOpen, onClose, booking, onDeleteSucces
             <h3 className="font-semibold text-red-900 mb-2">Thông tin đăng ký sẽ bị xóa:</h3>
             <div className="text-sm text-red-800 space-y-1">
               <p><span className="font-medium">ID:</span> #{booking.id}</p>
-              <p><span className="font-medium">Dịch vụ:</span> #{booking.serviceId}</p>
+              <p><span className="font-medium">Dịch vụ:</span> {getServiceName(booking.serviceId)}</p>
               <p><span className="font-medium">Thời gian hẹn:</span> {new Date(booking.appointmentTime).toLocaleString("vi-VN")}</p>
             </div>
           </div>

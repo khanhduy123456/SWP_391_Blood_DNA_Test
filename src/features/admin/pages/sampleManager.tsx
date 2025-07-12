@@ -78,10 +78,11 @@ function SampleMethodManagement() {
   const handleMethodCreated = (method: SampleMethod) => {
     console.log("New method created:", method);
     fetchMethods(methodsData.pageNumber, methodsData.pageSize);
-    toast.success(`"${method.name}" sample method đã được tạo thành công!`, {
-      duration: 3000,
-      position: "bottom-right",
-    });
+   // toast.success(`"${method.name}" sample method đã được tạo thành công!`, {
+   //   duration: 3000,
+    //  position: "bottom-right",
+ //   }
+ // );
   };
 
   return (

@@ -62,7 +62,7 @@ const SidebarCustomer = ({ role }: SidebarProps) => {
   })();
 
   return (
-    <aside className="w-64 h-screen bg-white shadow-md flex flex-col justify-between">
+    <aside className="w-64 h-screen bg-white shadow-md flex flex-col justify-between pt-8">
       <div>
         <div className="p-4 text-xl font-bold">Quản lý Tài khoản cá nhân</div>
         <nav className="space-y-1 px-2">

@@ -59,6 +59,7 @@ interface SampleMethod {
 interface Service {
   id: number;
   name: string;
+  type: string;
   price: number;
   description?: string;
 }
@@ -220,7 +221,7 @@ export const BookingPage: React.FC = () => {
                     <SelectContent>
                       {services.map((service) => (
                         <SelectItem key={service.id} value={service.id.toString()} className="text-lg">
-                          {service.name} - {service.price?.toLocaleString()}đ
+                          {service.name} - {service.type} - {service.price?.toLocaleString()}đ
                         </SelectItem>
                       ))}
                     </SelectContent>

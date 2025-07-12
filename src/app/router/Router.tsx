@@ -61,6 +61,7 @@ export const AppRouter = () => {
           <Route element={<StaffLayout role="Staff" />}>
             {/* <Route path="/staff" element={<StaffDashboard />} /> */}
             <Route path="/staff/kits" element={<KitManagement />} />
+            <Route path="/staff/sample-methods" element={<SampleMethodManagement />} />
             <Route path="/staff/services" element={<ServiceManager />} />
           </Route>
 

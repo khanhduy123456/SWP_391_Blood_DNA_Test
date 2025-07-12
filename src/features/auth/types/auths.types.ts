@@ -6,10 +6,10 @@ export interface Login {
 export interface Register {
   fullName: string;
   email: string;
-  Phone: string;
+  phone: string; 
   password: string;
   address: string;
-  role: string;
+  role?: string; // Optional
 }
 // Reverse mapping để convert từ number về string (optional)
 export const UserRoleNames = {

@@ -280,6 +280,7 @@ export default function BookingList() {
         }}
         booking={selectedBooking}
         onDeleteSuccess={handleUpdateSuccess}
+        services={services}
       />
 
       {/* Toast Container */}
