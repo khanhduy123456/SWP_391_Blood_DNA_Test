@@ -5,6 +5,7 @@ export interface ExRequestResponse {
     priorityId: number;
     sampleMethodId: number;
     statusId: string;
+    statusName: string;
     appointmentTime: string; // ISO string
     createAt: string; // ISO string
     updateAt: string; // ISO string

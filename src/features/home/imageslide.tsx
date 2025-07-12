@@ -15,7 +15,7 @@ export default function ImageSlider(): React.ReactElement {
   };
 
   return (
-    <div className="w-full mb-6">
+    <div className="w-full h-64 md:h-96">
       <Slider {...sliderSettings}>
         <div>
           <img

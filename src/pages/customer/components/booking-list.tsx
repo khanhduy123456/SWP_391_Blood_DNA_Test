@@ -7,7 +7,10 @@ import type { Service } from "@/pages/staff/type/service";
 import type { SampleMethod } from "@/features/admin/types/method";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/shared/ui/accordion";
 import { Button } from "@/shared/ui/button";
-import { CheckCircleIcon, XCircleIcon, ClockIcon, FlaskConicalIcon, UserCircle2Icon, ChevronLeft, ChevronRight } from "lucide-react";
+import { CheckCircleIcon, XCircleIcon, ClockIcon, FlaskConicalIcon, UserCircle2Icon, ChevronLeft, ChevronRight, Trash2Icon } from "lucide-react";
+import UpdateBooking from "./update-booking";
+import DeleteBooking from "./delete-booking";
+import { Toaster } from "react-hot-toast";
 
 function parseJwt(token: string) {
   try {
@@ -27,9 +30,9 @@ function parseJwt(token: string) {
   }
 }
 
-const statusIcon = (status: string) => {
-  if (status === "Accepted") return <CheckCircleIcon className="inline mr-1 text-green-600" size={18} />;
-  if (status === "Not Accept") return <XCircleIcon className="inline mr-1 text-red-600" size={18} />;
+const statusIcon = (statusName: string) => {
+  if (statusName === "Accepted") return <CheckCircleIcon className="inline mr-1 text-green-600" size={18} />;
+  if (statusName === "Not Accept") return <XCircleIcon className="inline mr-1 text-red-600" size={18} />;
   return <ClockIcon className="inline mr-1 text-yellow-500" size={18} />;
 };
 
@@ -43,6 +46,9 @@ export default function BookingList() {
   const [pageNumber, setPageNumber] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  const [selectedBooking, setSelectedBooking] = useState<ExRequestResponse | null>(null);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -81,6 +87,44 @@ export default function BookingList() {
 
   const getService = (id: number) => services.find(s => s.id === id);
   const getSampleMethod = (id: number) => sampleMethods.find(m => m.id === id);
+
+  const handleEditBooking = (booking: ExRequestResponse) => {
+    setSelectedBooking(booking);
+    setIsUpdateModalOpen(true);
+  };
+
+  const handleDeleteBooking = (booking: ExRequestResponse) => {
+    setSelectedBooking(booking);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleUpdateSuccess = () => {
+    // Refresh data after successful update
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem("accessToken");
+        let userId = null;
+        if (token) {
+          const payload = parseJwt(token);
+          userId = payload && payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
+        }
+        if (!userId) return;
+        const data: PagedExRequestResponse = await getExRequestsByAccountId(Number(userId), pageNumber, PAGE_SIZE);
+        let items = data.items || [];
+        if (sortOrder === 'desc') {
+          items = items.slice().sort((a, b) => new Date(b.appointmentTime).getTime() - new Date(a.appointmentTime).getTime());
+        } else {
+          items = items.slice().sort((a, b) => new Date(a.appointmentTime).getTime() - new Date(b.appointmentTime).getTime());
+        }
+        setRequests(items);
+        setTotalPages(data.totalPages || 1);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white py-8 px-2 md:px-0">
@@ -132,20 +176,36 @@ export default function BookingList() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 mt-2 md:mt-0">
-                        {statusIcon(req.statusId)}
+                        {statusIcon(req.statusName)}
                         <span className={
-                          req.statusId === "Not Accept"
+                          req.statusName === "Not Accept"
                             ? "text-red-600 font-semibold"
-                            : req.statusId === "Accepted"
+                            : req.statusName === "Accepted"
                             ? "text-green-600 font-semibold"
                             : "text-yellow-600 font-semibold"
                         }>
-                          {req.statusId}
+                          {req.statusName}
                         </span>
-                        {req.statusId === "Not Accept" && (
-                          <Button size="sm" variant="outline" className="ml-4 text-xs px-3 py-1 border-blue-500 text-blue-700 hover:bg-blue-50">
-                            Chỉnh sửa
-                          </Button>
+                        {req.statusName === "Not Accept" && (
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="text-xs px-3 py-1 border-blue-500 text-blue-700 hover:bg-blue-50"
+                              onClick={() => handleEditBooking(req)}
+                            >
+                              Chỉnh sửa
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="text-xs px-3 py-1 border-red-500 text-red-700 hover:bg-red-50"
+                              onClick={() => handleDeleteBooking(req)}
+                            >
+                              <Trash2Icon size={14} className="mr-1" />
+                              Xóa
+                            </Button>
+                          </div>
                         )}
                       </div>
                     </AccordionTrigger>
@@ -199,6 +259,52 @@ export default function BookingList() {
           </>
         )}
       </div>
+
+      {/* Update Booking Modal */}
+      <UpdateBooking
+        isOpen={isUpdateModalOpen}
+        onClose={() => {
+          setIsUpdateModalOpen(false);
+          setSelectedBooking(null);
+        }}
+        booking={selectedBooking}
+        onUpdateSuccess={handleUpdateSuccess}
+      />
+
+      {/* Delete Booking Modal */}
+      <DeleteBooking
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setSelectedBooking(null);
+        }}
+        booking={selectedBooking}
+        onDeleteSuccess={handleUpdateSuccess}
+      />
+
+      {/* Toast Container */}
+      <Toaster 
+        position="bottom-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+          success: {
+            duration: 4000,
+            style: {
+              background: '#10b981',
+            },
+          },
+          error: {
+            duration: 4000,
+            style: {
+              background: '#ef4444',
+            },
+          },
+        }}
+      />
     </div>
   );
 }

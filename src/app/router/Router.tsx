@@ -15,7 +15,7 @@ import AdminLayout from '@/pages/admin/adminLayout';
 import { BookingModal } from '@/pages/customer/components/bookingPopup';
 import SampleMethodManagement from '@/features/admin/pages/sampleManager';
 import HomeBody from '@/features/home/HomeBody';
-import ADNChaCon from '@/pages/services/priceservice/khaisinh';
+import ADNChaCon from '@/pages/services/priceservice/chacon';
 import NotFound from '@/features/auth/pages/notFound';
 import StaffLayout from '@/pages/staff/page/staffLayout';
 import ServiceManager from '@/pages/staff/component/serviceManager';
@@ -23,6 +23,7 @@ import CusLayout from '@/pages/customer/cusLayout';
 import { BookingPage } from '@/pages/customer/components/booking';
 import Profile from '@/pages/customer/components/profile';
 import BookingList from '@/pages/customer/components/booking-list';
+import DNAKhaiSinhPage from '@/pages/services/priceservice/khaisinh';
 // import BlogApp from '@/features/admin/pages/blogpost/blogApp';
 // Thêm các component cho Staff, Manager, Client
 
@@ -38,6 +39,7 @@ export const AppRouter = () => {
         <Route element={<Home />}>
           <Route path={routes.home} element={<HomeBody />} />
           <Route path={routes.adnChaCon} element={<ADNChaCon />} />
+          <Route path={routes.adnKhaiSinh} element={<DNAKhaiSinhPage />} />
         </Route>
         <Route path={routes.login} element={<Login />} />
         <Route path={routes.register} element={<Register />} />

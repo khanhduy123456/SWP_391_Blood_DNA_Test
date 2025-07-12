@@ -5,7 +5,15 @@ const ENDPOINT = {
   CREATE_EX_REQUEST: "/ExRequest",
   GET_EX_REQUEST_BY_ACCOUNT: (userId: number) =>
     `/ExRequest/account/${userId}`,
+  UPDATE_PARTIAL_EX_REQUEST: (id: number) => `/ExRequest/partial/${id}`,
+  DELETE_EX_REQUEST: (id: number) => `/ExRequest/${id}`,
 };
+
+export interface UpdatePartialExRequest {
+  serviceId: number;
+  sampleMethodId: number;
+  appointmentTime: string; // ISO format
+}
 
 export interface CreateExRequest {
   userId: number;
@@ -54,6 +62,38 @@ export const getExRequestsByAccountId = async (
     return response.data;
   } catch (error) {
     console.error("Error fetching ExRequests by Account ID:", error);
+    throw error;
+  }
+};
+
+export const updatePartialExRequest = async (
+  requestId: number,
+  data: UpdatePartialExRequest,
+): Promise<void> => {
+  try {
+    await axiosClient.patch(ENDPOINT.UPDATE_PARTIAL_EX_REQUEST(requestId), data, {
+      headers: {
+        Accept: "*/*",
+        "Content-Type": "application/json",
+      },
+    });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    console.error(" Lỗi khi cập nhật yêu cầu kiểm tra:", error?.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const deleteExRequest = async (id: number): Promise<void> => {
+  try {
+    await axiosClient.delete(ENDPOINT.DELETE_EX_REQUEST(id), {
+      headers: {
+        Accept: "text/plain",
+      },
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    console.error("❌ Lỗi khi xoá ExRequest:", error.response?.data || error.message);
     throw error;
   }
 };

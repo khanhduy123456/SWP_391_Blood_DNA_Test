@@ -11,7 +11,8 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       <Header user={user} />
-      <div className="flex-grow pt-16">
+      <div className="h-20 lg:h-24"></div>
+      <div className="flex-grow pt-10">
         <Outlet />
       </div>
       <Footer />
