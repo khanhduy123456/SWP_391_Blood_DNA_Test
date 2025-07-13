@@ -7,6 +7,8 @@ export const routes = {
   notFound: '/notfound',
   adnChaCon: '/dich-vu-xet-nghiem-adn-huyet-thong-cha-con',
   adnKhaiSinh: '/dich-vu-xet-nghiem-adn-lam-giay-khai-sinh-cho-con',
+  news: "/news",
+  newsDetail: (id: string) => `/news/${id}`,
 };
 export const adminRoutes = {
   dashboard: '/admin/dashboard',

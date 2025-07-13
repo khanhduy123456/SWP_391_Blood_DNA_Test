@@ -5,6 +5,7 @@ import {
     LayoutDashboard,
   TestTubeDiagonal,
   User,
+  BookOpen,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 
@@ -54,6 +55,12 @@ const Sidebar = ({ role }: SidebarProps) => {
           name: "Sample Method Management",
           href: "/admin/sample-methods",
           icon: <BadgeCheck size={size} />,
+          position: "top",
+        },
+        {
+          name: "Blog Management",
+          href: "/admin/blogs",
+          icon: <BookOpen size={size} />,
           position: "top",
         },
         

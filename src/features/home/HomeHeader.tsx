@@ -76,7 +76,7 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
     },
     { label: "Bảng giá", hasDropdown: false, to: "#" },
     { label: "Hướng dẫn", hasDropdown: false, to: "#" },
-    { label: "Tin tức", hasDropdown: false, to: "#" },
+    { label: "Tin tức", hasDropdown: false, to: "/news" },
     { label: "Hỏi đáp", hasDropdown: false, to: "#" },
     { label: "Liên hệ", hasDropdown: false, to: "#footer" },
   ];

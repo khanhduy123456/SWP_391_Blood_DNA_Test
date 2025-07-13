@@ -25,8 +25,11 @@ import { BookingPage } from '@/pages/customer/page/booking';
 import Profile from '@/pages/customer/page/profile';
 import BookingList from '@/pages/customer/page/booking-list';
 import DNAKhaiSinhPage from '@/pages/services/priceservice/khaisinh';
-import ServiceManager from '@/pages/staff/page/serviceManager';// import BlogApp from '@/features/admin/pages/blogpost/blogApp';
+import ServiceManager from '@/pages/staff/page/serviceManager';
 import BookingAssign from '@/pages/staff/page/bookingAssign';
+import NewsList from '@/features/home/NewsList';
+import NewsDetail from '@/features/home/NewsDetail';
+import BlogApp from '@/features/admin/pages/blogpost/blogApp';
 // Thêm các component cho Staff, Manager, Client
 
 export const AppRouter = () => {
@@ -42,6 +45,8 @@ export const AppRouter = () => {
           <Route path={routes.home} element={<HomeBody />} />
           <Route path={routes.adnChaCon} element={<ADNChaCon />} />
           <Route path={routes.adnKhaiSinh} element={<DNAKhaiSinhPage />} />
+          <Route path={routes.news} element={<NewsList />} />
+          <Route path={routes.newsDetail(':id')} element={<NewsDetail />} />
         </Route>
         <Route path={routes.login} element={<Login />} />
         <Route path={routes.register} element={<Register />} />
@@ -56,7 +61,7 @@ export const AppRouter = () => {
             <Route path="/admin/dashboard" element={<Dashboard />} />
             <Route path="/admin/users" element={<UserManagement />} />
             <Route path="/admin/kits" element={<KitManagement />} />
-            {/* <Route path='/admin/blogs' element={<BlogApp/>} /> */}
+            <Route path="/admin/blogs" element={<BlogApp />} />
             <Route path="/admin/sample-methods" element={<SampleMethodManagement />} />
             <Route path="/admin/booking-modal" element={<BookingModal isOpen={true} onClose={() => {}} userId={1} />} />
           </Route>

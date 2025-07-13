@@ -54,7 +54,7 @@ export const termsSchema = z.literal(true, {
   errorMap: () => ({ message: "Vui lòng đồng ý với điều khoản dịch vụ" }),
 });
 
-// Schema tổng nếu bạn muốn validate cả form
+// Schema tổng  validate cả form
 export const registerFormSchema = z
   .object({
     fullName: fullNameSchema,
