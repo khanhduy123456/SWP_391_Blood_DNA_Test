@@ -176,24 +176,35 @@ const LoginForm: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-      {/* Left Side - New Medical Illustration with DNA */}
-      <div className="relative flex items-center justify-center flex-1 p-12 bg-gradient-to-br from-teal-600 to-blue-900">
-        <div className="max-w-lg text-center text-white">
-          {/* New DNA Icon */}
-          <div className="flex justify-center mb-8">
-            <div className="relative">
-              <div className="flex items-center justify-center w-28 h-28 rounded-full bg-white/10 backdrop-blur-md">
+      {/* Left Side - Enhanced Medical Illustration with DNA */}
+      <div className="relative flex items-center justify-center w-1/2 p-12 bg-gradient-to-br from-blue-900 via-teal-800 to-cyan-700 overflow-hidden">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0">
+          <div className="absolute w-96 h-96 bg-blue-400/10 rounded-full -top-20 -left-20 animate-pulse"></div>
+          <div className="absolute w-80 h-80 bg-teal-400/10 rounded-full -bottom-16 -right-16 animate-pulse delay-1000"></div>
+          <div className="absolute w-64 h-64 bg-cyan-400/10 rounded-full top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pulse delay-500"></div>
+        </div>
+
+        <div className="relative max-w-md text-center text-white z-10">
+          {/* Enhanced DNA Icon with 3D Effect */}
+          <div className="flex justify-center mb-10">
+            <div className="relative group">
+              <div className="flex items-center justify-center w-32 h-32 rounded-full bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-md border border-white/20 shadow-2xl group-hover:scale-105 transition-transform duration-300">
                 <svg
-                  className="w-16 h-16 text-white animate-spin-slow"
+                  className="w-20 h-20 text-white animate-spin-slow drop-shadow-lg"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
                   viewBox="0 0 24 24"
                 >
                   <defs>
+                    <linearGradient id="dnaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" style={{stopColor: '#ffffff', stopOpacity: 1}} />
+                      <stop offset="100%" style={{stopColor: '#7dd3fc', stopOpacity: 0.8}} />
+                    </linearGradient>
                     <style>
                       {`
-                        .dna-helix { animation: helix-spin 6s linear infinite; }
+                        .dna-helix { animation: helix-spin 8s linear infinite; }
                         @keyframes helix-spin {
                           0% { transform: rotate(0deg); }
                           100% { transform: rotate(360deg); }
@@ -205,50 +216,83 @@ const LoginForm: React.FC = () => {
                     <path
                       d="M6 4c0 4 3 6 6 8s6 4 6 8"
                       strokeLinecap="round"
-                      strokeWidth="1.5"
+                      strokeWidth="2"
+                      stroke="url(#dnaGradient)"
                     />
                     <path
                       d="M18 4c0 4-3 6-6 8s-6 4-6 8"
                       strokeLinecap="round"
-                      strokeWidth="1.5"
+                      strokeWidth="2"
+                      stroke="url(#dnaGradient)"
                     />
-                    <line x1="6" y1="6" x2="18" y2="6" strokeWidth="1" opacity="0.6" />
-                    <line x1="6" y1="12" x2="18" y2="12" strokeWidth="1" opacity="0.6" />
-                    <line x1="6" y1="18" x2="18" y2="18" strokeWidth="1" opacity="0.6" />
-                    <Dna size={20} className="absolute top-0 left-0 text-teal-300" />
+                    <line x1="6" y1="6" x2="18" y2="6" strokeWidth="1.5" opacity="0.8" />
+                    <line x1="6" y1="12" x2="18" y2="12" strokeWidth="1.5" opacity="0.8" />
+                    <line x1="6" y1="18" x2="18" y2="18" strokeWidth="1.5" opacity="0.8" />
                   </g>
                 </svg>
               </div>
-              <div className="absolute flex items-center justify-center w-10 h-10 bg-teal-400 rounded-full -bottom-2 -right-2">
-                <Heart size={18} className="text-white animate-pulse" />
+              <div className="absolute flex items-center justify-center w-12 h-12 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full -bottom-3 -right-3 shadow-lg animate-pulse">
+                <Heart size={20} className="text-white" />
+              </div>
+              {/* Floating particles */}
+              <div className="absolute w-3 h-3 bg-cyan-300 rounded-full top-4 left-4 animate-bounce"></div>
+              <div className="absolute w-2 h-2 bg-blue-300 rounded-full top-8 right-6 animate-bounce delay-300"></div>
+              <div className="absolute w-2.5 h-2.5 bg-teal-300 rounded-full bottom-6 left-8 animate-bounce delay-700"></div>
+            </div>
+          </div>
+
+          {/* Enhanced Typography */}
+          <h1 className="mb-6 text-4xl font-bold tracking-wide bg-gradient-to-r from-white to-cyan-200 bg-clip-text text-transparent">
+            Phân Tích Huyết Thống DNA
+          </h1>
+          <p className="mb-8 text-lg text-cyan-100 leading-relaxed">
+            Giải pháp y tế tiên tiến với công nghệ xét nghiệm ADN chính xác và đáng tin cậy
+          </p>
+
+          {/* Enhanced Feature Cards */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-center space-x-3 p-3 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 hover:bg-white/15 transition-colors">
+              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full">
+                <Shield size={18} className="text-white" />
+              </div>
+              <span className="text-cyan-100 font-medium">An toàn và bảo mật tuyệt đối</span>
+            </div>
+            <div className="flex items-center justify-center space-x-3 p-3 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 hover:bg-white/15 transition-colors">
+              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full">
+                <Dna size={18} className="text-white" />
+              </div>
+              <span className="text-cyan-100 font-medium">Kết quả nhanh chóng, đáng tin cậy</span>
+            </div>
+            <div className="flex items-center justify-center space-x-3 p-3 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 hover:bg-white/15 transition-colors">
+              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-full">
+                <Users size={18} className="text-white" />
+              </div>
+              <span className="text-cyan-100 font-medium">Hỗ trợ từ chuyên gia y tế</span>
+            </div>
+          </div>
+
+          {/* Bottom Stats */}
+          <div className="mt-8 pt-6 border-t border-white/20">
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <div className="text-2xl font-bold text-white">99.9%</div>
+                <div className="text-xs text-cyan-200">Độ chính xác</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-white">24h</div>
+                <div className="text-xs text-cyan-200">Thời gian xử lý</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-white">10K+</div>
+                <div className="text-xs text-cyan-200">Khách hàng tin tưởng</div>
               </div>
             </div>
           </div>
-          <h1 className="mb-4 text-3xl font-semibold tracking-wide">Phân Tích Huyết Thống DNA</h1>
-          <p className="mb-6 text-lg text-teal-100">
-            Giải pháp y tế tiên tiến cho xét nghiệm ADN chính xác
-          </p>
-          <div className="pt-6 mt-6 space-y-3 border-t border-teal-200/30">
-            <div className="flex items-center justify-center space-x-2 text-teal-100">
-              <Shield size={16} />
-              <span>An toàn và bảo mật</span>
-            </div>
-            <div className="flex items-center justify-center space-x-2 text-teal-100">
-              <Dna size={16} />
-              <span>Kết quả nhanh chóng, đáng tin cậy</span>
-            </div>
-            <div className="flex items-center justify-center space-x-2 text-teal-100">
-              <Users size={16} />
-              <span>Hỗ trợ từ chuyên gia y tế</span>
-            </div>
-          </div>
         </div>
-        <div className="absolute w-20 h-20 rounded-full top-8 left-8 bg-teal-400/10 animate-pulse"></div>
-        <div className="absolute w-14 h-14 rounded-full bottom-12 right-12 bg-white/15 animate-pulse"></div>
       </div>
 
       {/* Right Side - Login Form */}
-      <div className="flex items-center justify-center flex-1 p-8 bg-white">
+      <div className="flex items-center justify-center w-1/2 p-12 bg-white">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 mb-4 bg-blue-100 rounded-full">
@@ -319,6 +363,17 @@ const LoginForm: React.FC = () => {
                   </FormItem>
                 )}
               />
+              
+              {/* Quên mật khẩu link */}
+              <div className="flex justify-end">
+                <Link
+                  to="/forgot-password"
+                  className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  Quên mật khẩu?
+                </Link>
+              </div>
+              
               <Button
                 type="submit"
                 disabled={loading}

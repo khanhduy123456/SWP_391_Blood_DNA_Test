@@ -8,6 +8,8 @@ import { ProtectedRoute } from '../providers/route-guard';
 import Home from '@/pages/Home';
 import Login from '@/features/auth/pages/Login';
 import Register from '@/features/auth/pages/Register';
+import ForgotPassword from '@/features/auth/pages/ForgotPassword';
+import ResetPassword from '@/features/auth/pages/ResetPassword';
 import Dashboard from '@/features/admin/pages/dashboard';
 import UserManagement from '@/features/admin/pages/userManager';
 import KitManagement from '@/features/admin/pages/kitManager';
@@ -43,6 +45,8 @@ export const AppRouter = () => {
         </Route>
         <Route path={routes.login} element={<Login />} />
         <Route path={routes.register} element={<Register />} />
+        <Route path={routes.forgotPassword} element={<ForgotPassword />} />
+        <Route path={routes.resetPassword} element={<ResetPassword />} />
         <Route path={routes.notFound} element={<NotFound />} />
 
         {/* Protected Routes */}

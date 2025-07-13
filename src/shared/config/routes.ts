@@ -2,6 +2,8 @@ export const routes = {
   home: '/',
   login: '/login',
   register: '/register',
+  forgotPassword: '/forgot-password',
+  resetPassword: '/reset-password',
   notFound: '/notfound',
   adnChaCon: '/dich-vu-xet-nghiem-adn-huyet-thong-cha-con',
   adnKhaiSinh: '/dich-vu-xet-nghiem-adn-lam-giay-khai-sinh-cho-con',

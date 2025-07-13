@@ -141,6 +141,10 @@ body {
 }
 
 @layer components {
+  .animate-spin-slow {
+    animation: spin 6s linear infinite;
+  }
+
   .data-table {
     max-height: 400px;
     overflow-y: auto;
