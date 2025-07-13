@@ -8,8 +8,8 @@ import type { SampleMethod } from "@/features/admin/types/method";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/shared/ui/accordion";
 import { Button } from "@/shared/ui/button";
 import { CheckCircleIcon, XCircleIcon, ClockIcon, FlaskConicalIcon, UserCircle2Icon, ChevronLeft, ChevronRight, Trash2Icon } from "lucide-react";
-import UpdateBooking from "./update-booking";
-import DeleteBooking from "./delete-booking";
+import UpdateBooking from "../components/update-booking";
+import DeleteBooking from "../components/delete-booking";
 import { Toaster } from "react-hot-toast";
 
 function parseJwt(token: string) {

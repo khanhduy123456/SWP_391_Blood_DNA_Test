@@ -5,11 +5,11 @@ import { MoreVertical, Pencil } from 'lucide-react';
 import type { PagedServiceResponse } from '../api/service.api';
 import type { Service } from '../type/service';
 import { getPagedService, deleteService } from '../api/service.api';
-import { AddServiceModal } from './addService';
 import toast from 'react-hot-toast';
-import { UpdateServiceModal } from './updateServiceModal';
 import { Toaster } from 'react-hot-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/shared/ui/dialog';
+import { UpdateServiceModal } from '../component/updateServiceModal';
+import { AddServiceModal } from '../component/addService';
 
 function formatDateTime(dateString: string) {
   const date = new Date(dateString);

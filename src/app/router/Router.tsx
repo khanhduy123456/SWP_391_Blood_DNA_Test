@@ -17,14 +17,14 @@ import SampleMethodManagement from '@/features/admin/pages/sampleManager';
 import HomeBody from '@/features/home/HomeBody';
 import ADNChaCon from '@/pages/services/priceservice/chacon';
 import NotFound from '@/features/auth/pages/notFound';
-import StaffLayout from '@/pages/staff/page/staffLayout';
-import ServiceManager from '@/pages/staff/component/serviceManager';
+import StaffLayout from '@/pages/staff/staffLayout';
 import CusLayout from '@/pages/customer/cusLayout';
-import { BookingPage } from '@/pages/customer/components/booking';
-import Profile from '@/pages/customer/components/profile';
-import BookingList from '@/pages/customer/components/booking-list';
+import { BookingPage } from '@/pages/customer/page/booking';
+import Profile from '@/pages/customer/page/profile';
+import BookingList from '@/pages/customer/page/booking-list';
 import DNAKhaiSinhPage from '@/pages/services/priceservice/khaisinh';
-// import BlogApp from '@/features/admin/pages/blogpost/blogApp';
+import ServiceManager from '@/pages/staff/page/serviceManager';// import BlogApp from '@/features/admin/pages/blogpost/blogApp';
+import BookingAssign from '@/pages/staff/page/bookingAssign';
 // Thêm các component cho Staff, Manager, Client
 
 export const AppRouter = () => {
@@ -62,7 +62,8 @@ export const AppRouter = () => {
             {/* <Route path="/staff" element={<StaffDashboard />} /> */}
             <Route path="/staff/kits" element={<KitManagement />} />
             <Route path="/staff/sample-methods" element={<SampleMethodManagement />} />
-            <Route path="/staff/services" element={<ServiceManager />} />
+            <Route path="/staff/services" element={<ServiceManager/>} />
+            <Route path="/staff/booking-assign" element={<BookingAssign/>} />
           </Route>
 
           {/* Manager Routes */}

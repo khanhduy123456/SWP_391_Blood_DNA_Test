@@ -34,7 +34,7 @@ const SidebarStaff = ({ role }: SidebarProps) => {
       return [
         {
           name: "Quản lí đơn xét nghiệm",
-          href: "/staff/test-bookings",
+          href: "/staff/booking-assign",
           icon: <CalendarRange size={size} />,
           position: "top",
         },
