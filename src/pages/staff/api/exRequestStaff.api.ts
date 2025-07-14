@@ -1,10 +1,11 @@
 // api/exRequest.api.ts
 import axiosClient from "@/shared/lib/axiosClient";
-import type { ExRequest, PagedExRequestResponse } from "../type/exRequestStaff";
+import type { PagedExRequestResponse } from "../type/exRequestStaff";
 
 const ENDPOINT = {
   GET_EX_REQUESTS_BY_ACCOUNT: (userId: number) =>
     `/ExRequest/account/${userId}`,
+  GET_EXREQUEST_BY_ID: (id: number) => `/ExRequest/${id}`,
   GET_EXREQUEST_BY_STAFF_ID: (staffId: number) => `/ExRequest/staff/${staffId}`,
 };
 
@@ -46,7 +47,52 @@ export const getExRequestsByStaffId = async (
     return response.data as ExRequest[];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
-    console.error("Lỗi khi lấy danh sách yêu cầu kiểm tra theo staffId:", error.response?.data || error.message);
+    // Kiểm tra nếu lỗi là "Không tìm thấy yêu cầu nào" thì trả về mảng rỗng
+    const errorMessage = error.response?.data || error.message;
+    if (typeof errorMessage === 'string' && errorMessage.includes('Không tìm thấy yêu cầu nào')) {
+      console.log(`Staff ${staffId} chưa được phân công booking nào`);
+      return [];
+    }
+    
+    console.error("Lỗi khi lấy danh sách yêu cầu kiểm tra theo staffId:", errorMessage);
     throw error;
+  }
+};
+
+export interface ExRequest {
+  id: number;
+  userId: number;
+  serviceId: number;
+  priorityId: number;
+  sampleMethodId: number;
+  statusId: string;
+  appointmentTime: string;
+  createAt: string;
+  updateAt: string;
+  staffId: number;
+}
+
+// ✅ Gọi API để lấy ExRequest theo ID
+export const getExRequestById = async (id: number): Promise<ExRequest> => {
+  try {
+    console.log(`Gọi API: ${ENDPOINT.GET_EXREQUEST_BY_ID(id)}`);
+    const response = await axiosClient.get(ENDPOINT.GET_EXREQUEST_BY_ID(id), {
+      headers: {
+        Accept: "*/*",
+      },
+    });
+
+    if (response.status === 200 && response.data) {
+      return response.data;
+    }
+
+    throw new Error(`Unexpected status code: ${response.status}`);
+  } catch (error: unknown) {
+    console.error("Lỗi khi lấy ExRequest:", error);
+    if (error && typeof error === "object" && "response" in error) {
+      const axiosError = error as { response?: { status?: number; data?: unknown } };
+      console.log("Chi tiết lỗi:", axiosError.response?.status, axiosError.response?.data);
+    }
+    throw new Error("Không thể lấy thông tin ExRequest");
   }
 };

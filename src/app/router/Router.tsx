@@ -27,6 +27,7 @@ import BookingList from '@/pages/customer/page/booking-list';
 import DNAKhaiSinhPage from '@/pages/services/priceservice/khaisinh';
 import ServiceManager from '@/pages/staff/page/serviceManager';
 import BookingAssign from '@/pages/staff/page/bookingAssign';
+import KitDeliveryManagement from '@/pages/staff/page/kitDeliveryManager';
 import NewsList from '@/features/home/NewsList';
 import NewsDetail from '@/features/home/NewsDetail';
 import BlogApp from '@/features/admin/pages/blogpost/blogApp';
@@ -73,6 +74,7 @@ export const AppRouter = () => {
             <Route path="/staff/sample-methods" element={<SampleMethodManagement />} />
             <Route path="/staff/services" element={<ServiceManager/>} />
             <Route path="/staff/booking-assign" element={<BookingAssign/>} />
+            <Route path="/staff/kit-deliveries" element={<KitDeliveryManagement/>} />
           </Route>
 
           {/* Manager Routes */}

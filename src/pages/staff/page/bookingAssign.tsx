@@ -17,8 +17,30 @@ import {
 } from 'lucide-react';
 
 import type { ExRequest } from '../type/exRequestStaff';
-import type { Service } from '../type/service';
+import { getExRequestsByStaffId } from '../api/exRequestStaff.api';
+import { getStaffIdByUserId } from '../api/staff.api';
+import { getAllService } from '../api/service.api';
 import toast, { Toaster } from 'react-hot-toast';
+import { CreateKitDeliveryModal } from '../component/createKitDeliveryModal';
+
+// Hàm parseJwt để lấy userId từ accessToken
+function parseJwt(token: string) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(function (c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
 
 // Interface mở rộng cho ExRequest với thông tin bổ sung
 interface ExtendedExRequest extends ExRequest {
@@ -48,121 +70,12 @@ const priorityMapping: Record<number, { name: string; color: string }> = {
   4: { name: 'Khẩn cấp', color: 'bg-red-100 text-red-800' }
 };
 
-// Fake data cho testing
-const fakeServices: Service[] = [
-  {
-    id: 1,
-    name: 'Xét nghiệm ADN Cha - Con',
-    description: 'Xác định mối quan hệ huyết thống cha con',
-    requirements: 'Mẫu máu hoặc niêm mạc miệng',
-    type: 'ADN Huyết thống',
-    price: 2500000,
-    createAt: '2024-01-01T00:00:00Z',
-    updateAt: '2024-01-01T00:00:00Z'
-  },
-  {
-    id: 2,
-    name: 'Xét nghiệm ADN Mẹ - Con',
-    description: 'Xác định mối quan hệ huyết thống mẹ con',
-    requirements: 'Mẫu máu hoặc niêm mạc miệng',
-    type: 'ADN Huyết thống',
-    price: 2500000,
-    createAt: '2024-01-01T00:00:00Z',
-    updateAt: '2024-01-01T00:00:00Z'
-  },
-  {
-    id: 3,
-    name: 'Xét nghiệm ADN Anh Em',
-    description: 'Xác định mối quan hệ anh em ruột',
-    requirements: 'Mẫu máu hoặc niêm mạc miệng',
-    type: 'ADN Huyết thống',
-    price: 3000000,
-    createAt: '2024-01-01T00:00:00Z',
-    updateAt: '2024-01-01T00:00:00Z'
-  },
-  {
-    id: 4,
-    name: 'Xét nghiệm ADN Ông Bà - Cháu',
-    description: 'Xác định mối quan hệ ông bà với cháu',
-    requirements: 'Mẫu máu hoặc niêm mạc miệng',
-    type: 'ADN Huyết thống',
-    price: 3500000,
-    createAt: '2024-01-01T00:00:00Z',
-    updateAt: '2024-01-01T00:00:00Z'
-  }
-];
-
-const fakeBookings: ExRequest[] = [
-  {
-    id: 1001,
-    userId: 101,
-    serviceId: 1,
-    priorityId: 3,
-    sampleMethodId: 1,
-    statusId: '1',
-    appointmentTime: '2024-12-25T09:00:00.000Z',
-    createAt: '2024-12-20T10:30:00.000Z',
-    updateAt: '2024-12-20T10:30:00.000Z',
-    staffId: 1
-  },
-  {
-    id: 1002,
-    userId: 102,
-    serviceId: 2,
-    priorityId: 4,
-    sampleMethodId: 2,
-    statusId: '4',
-    appointmentTime: '2024-12-26T14:00:00.000Z',
-    createAt: '2024-12-19T15:45:00.000Z',
-    updateAt: '2024-12-21T08:20:00.000Z',
-    staffId: 1
-  },
-  {
-    id: 1003,
-    userId: 103,
-    serviceId: 3,
-    priorityId: 2,
-    sampleMethodId: 1,
-    statusId: '5',
-    appointmentTime: '2024-12-24T11:30:00.000Z',
-    createAt: '2024-12-18T09:15:00.000Z',
-    updateAt: '2024-12-23T16:30:00.000Z',
-    staffId: 1
-  },
-  {
-    id: 1004,
-    userId: 104,
-    serviceId: 4,
-    priorityId: 1,
-    sampleMethodId: 2,
-    statusId: '2',
-    appointmentTime: '2024-12-27T16:00:00.000Z',
-    createAt: '2024-12-21T13:20:00.000Z',
-    updateAt: '2024-12-22T10:45:00.000Z',
-    staffId: 1
-  },
-  {
-    id: 1005,
-    userId: 105,
-    serviceId: 1,
-    priorityId: 3,
-    sampleMethodId: 1,
-    statusId: '3',
-    appointmentTime: '2024-12-28T10:00:00.000Z',
-    createAt: '2024-12-22T11:30:00.000Z',
-    updateAt: '2024-12-22T14:15:00.000Z',
-    staffId: 1
-  }
-];
-
 const BookingAssign: React.FC = () => {
   const [bookings, setBookings] = useState<ExtendedExRequest[]>([]);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-
-
+  const [isCreateDeliveryModalOpen, setIsCreateDeliveryModalOpen] = useState(false);
+  const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
 
   // Format datetime
   const formatDateTime = (dateString: string) => {
@@ -187,19 +100,44 @@ const BookingAssign: React.FC = () => {
     });
   };
 
-
-
   // Fetch dữ liệu
   const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Sử dụng fake data để test UI
+      // Lấy userId từ access token
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('Không tìm thấy access token');
+      }
+
+      const payload = parseJwt(token);
+      const userId = payload && payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
+      if (!userId) {
+        throw new Error('Không thể lấy userId từ token');
+      }
+
+      console.log('UserId từ token:', userId);
+
+      // Lấy staffId từ userId
+      const staffData = await getStaffIdByUserId(parseInt(userId));
+      const staffId = staffData.staffId;
       
-      // Kết hợp thông tin với fake data
-      const extendedBookings: ExtendedExRequest[] = fakeBookings.map(booking => {
-        const service = fakeServices.find(s => s.id === booking.serviceId);
+      console.log('StaffId:', staffId);
+
+      // Lấy danh sách services
+      const servicesData = await getAllService();
+
+      // Lấy danh sách bookings theo staffId
+      const bookingsData = await getExRequestsByStaffId(staffId);
+      
+      console.log('Số lượng bookings:', bookingsData.length);
+      console.log('Bookings data:', bookingsData);
+
+      // Kết hợp thông tin với dữ liệu thực tế
+      const extendedBookings: ExtendedExRequest[] = bookingsData.map(booking => {
+        const service = servicesData.find(s => s.id === booking.serviceId);
         const status = statusMapping[booking.statusId] || { name: 'Không xác định', color: 'bg-gray-100 text-gray-800', icon: <AlertCircle size={16} /> };
         const priority = priorityMapping[booking.priorityId] || { name: 'Không xác định', color: 'bg-gray-100 text-gray-800' };
 
@@ -214,11 +152,12 @@ const BookingAssign: React.FC = () => {
 
       setBookings(extendedBookings);
       
-      // Thông báo đang sử dụng fake data
-      toast('Đang sử dụng dữ liệu mẫu để demo UI', {
-        duration: 3000,
-        icon: '🧪',
-      });
+      // Hiển thị thông báo phù hợp
+      if (bookingsData.length === 0) {
+        toast.success('Tải dữ liệu thành công! Hiện tại bạn chưa được phân công booking nào.');
+      } else {
+        toast.success(`Tải dữ liệu thành công! Có ${bookingsData.length} booking được phân công.`);
+      }
       
     } catch (err) {
       console.error('Lỗi khi tải dữ liệu:', err);
@@ -456,6 +395,18 @@ const BookingAssign: React.FC = () => {
                               Bắt đầu xử lý
                             </Button>
                           )}
+                          {booking.sampleMethodId === 2 && (
+                            <Button 
+                              size="sm"
+                              className="bg-blue-600 hover:bg-blue-700 text-white"
+                              onClick={() => {
+                                setSelectedRequestId(booking.id);
+                                setIsCreateDeliveryModalOpen(true);
+                              }}
+                            >
+                              Tạo Delivery
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -465,6 +416,22 @@ const BookingAssign: React.FC = () => {
             })
           )}
         </div>
+
+        {/* Create Kit Delivery Modal */}
+        {selectedRequestId && (
+          <CreateKitDeliveryModal
+            isOpen={isCreateDeliveryModalOpen}
+            onClose={() => {
+              setIsCreateDeliveryModalOpen(false);
+              setSelectedRequestId(null);
+            }}
+            requestId={selectedRequestId}
+            onSuccess={() => {
+              // Có thể refresh data hoặc thêm logic khác nếu cần
+              toast.success('Kit delivery đã được tạo thành công!');
+            }}
+          />
+        )}
       </div>
     </div>
   );
