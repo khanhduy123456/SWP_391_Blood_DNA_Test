@@ -6,7 +6,7 @@ const ENDPOINT = {
   CREATE_BLOG: "/BlogPost",
   UPDATE_BLOG: (id: number) => `/BlogPost/${id}`,
   DELETE_BLOG: (id: number) => `/BlogPost/${id}`,
-  GET_PUBLISHED_BLOGS: "/BlogPost/published",
+
 };
 
 export interface BlogPost {
@@ -66,21 +66,6 @@ export const getAllBlogPosts = async (): Promise<BlogPost[]> => {
     return response.data as BlogPost[];
   } catch (error) {
     console.error("Error fetching all blog posts:", error);
-    throw error;
-  }
-};
-
-// Lấy blog đã xuất bản (cho customer)
-export const getPublishedBlogPosts = async (): Promise<BlogPost[]> => {
-  try {
-    const response = await axiosClient.get(ENDPOINT.GET_PUBLISHED_BLOGS, {
-      headers: {
-        Accept: "application/json",
-      },
-    });
-    return response.data as BlogPost[];
-  } catch (error) {
-    console.error("Error fetching published blog posts:", error);
     throw error;
   }
 };

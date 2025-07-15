@@ -31,12 +31,14 @@ import KitDeliveryManagement from '@/pages/staff/page/kitDeliveryManager';
 import NewsList from '@/features/home/NewsList';
 import NewsDetail from '@/features/home/NewsDetail';
 import BlogApp from '@/features/admin/pages/blogpost/blogApp';
-// Thêm các component cho Staff, Manager, Client
+import ManagerLayout from '@/pages/manager/managerLayout';
+// import RequestCompletedManager from '@/pages/manager/pages/requestCompletedManager';
+// import ExResultManager from '@/pages/manager/pages/exResultManager';
+// import { managerRoutes } from '@/shared/config/routes';
 
 export const AppRouter = () => {
   // Giả định role được lấy từ context hoặc localStorage sau khi đăng nhập
   // Bạn nên thay thế bằng logic thực tế, ví dụ: useAuthContext hoặc localStorage.getItem('userRole')
-  // const userRole = localStorage.getItem('userRole') || 'Guest';
 
   return (
     <Router>
@@ -59,6 +61,8 @@ export const AppRouter = () => {
         <Route element={<ProtectedRoute />}>
           {/* Admin Routes */}
           <Route element={<AdminLayout role="Admin" />}>
+          <Route path="users" element={<UserManagement />} />
+            {/* <Route index element={<Navigate to="/admin/users" replace />} /> */}
             <Route path="/admin/dashboard" element={<Dashboard />} />
             <Route path="/admin/users" element={<UserManagement />} />
             <Route path="/admin/kits" element={<KitManagement />} />
@@ -78,9 +82,10 @@ export const AppRouter = () => {
           </Route>
 
           {/* Manager Routes */}
-          {/* <Route element={<ManagerLayout role="Manager" />}>
-            <Route path="/manager/test-management" element={<TestManagement />} />
-          </Route> */}
+          <Route element={<ManagerLayout role="Manager" />}>
+            {/* <Route path={managerRoutes.requestCompleted} element={<RequestCompletedManager />} />
+            <Route path={managerRoutes.exResult} element={<ExResultManager />} /> */}
+          </Route>
 
           {/* Customer Routes */}
           <Route element={<CusLayout role="Customer" />}>

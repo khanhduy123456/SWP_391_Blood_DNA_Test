@@ -5,7 +5,7 @@ import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Badge } from '@/shared/ui/badge';
 import { Search, Calendar, User, Eye, ArrowLeft, Clock, TrendingUp } from 'lucide-react';
-import { getPublishedBlogPosts, type BlogPost } from '@/features/admin/api/blog.api';
+import { getAllBlogPosts, type BlogPost } from '@/features/admin/api/blog.api';
 
 const NewsList: React.FC = () => {
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
@@ -39,7 +39,7 @@ const NewsList: React.FC = () => {
   const fetchBlogPosts = async () => {
     try {
       setIsLoading(true);
-      const posts = await getPublishedBlogPosts();
+      const posts = await getAllBlogPosts();
       setBlogPosts(posts);
     } catch (error) {
       console.error('Error fetching blog posts:', error);

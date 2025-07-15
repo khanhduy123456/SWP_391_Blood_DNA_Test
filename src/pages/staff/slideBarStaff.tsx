@@ -47,11 +47,6 @@ const SidebarStaff = ({ role }: SidebarProps) => {
     
     // Chuyển về trang chủ
     navigate("/");
-    
-    // Reload trang để cập nhật trạng thái
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
   };
 
   const navItems: NavItem[] = (() => {

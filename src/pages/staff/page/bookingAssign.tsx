@@ -258,7 +258,7 @@ const BookingAssign: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-
+      
           <Card className="bg-white shadow-lg border-0">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -425,7 +425,6 @@ const BookingAssign: React.FC = () => {
               setIsCreateDeliveryModalOpen(false);
               setSelectedRequestId(null);
             }}
-            requestId={selectedRequestId}
             onSuccess={() => {
               // Có thể refresh data hoặc thêm logic khác nếu cần
               toast.success('Kit delivery đã được tạo thành công!');

@@ -1,6 +1,6 @@
 import type React from "react";
 import { useState, useEffect } from "react";
-import { ChevronDown, LogOut, Menu, X, Phone, Mail } from "lucide-react";
+import { ChevronDown, Menu, X, Phone, Mail } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { routes } from "@/shared/config/routes";
 
@@ -47,21 +47,6 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
   // Toggle mobile menu
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
-
-  // Hàm xử lý logout
-  const handleLogout = () => {
-    // Xóa tất cả thông tin đăng nhập khỏi localStorage
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("userRole");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("username");
-    
-    navigate("/");
-    
-    // Reload trang để cập nhật trạng thái
-    window.location.reload();
   };
 
   const navigationItems = [
@@ -188,13 +173,19 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
                       Xin chào {user.username}
                     </span>
                   </div>
-                  <button
-                    onClick={handleLogout}
-                    className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-all duration-200 hover:scale-110"
-                    title="Đăng xuất"
-                  >
-                    <LogOut size={18} />
-                  </button>
+                  {/* Hiện icon nếu là Customer */}
+                  {localStorage.getItem("userRole") === "Customer" && (
+                    <button
+                      onClick={() => navigate("/customer/booking-list")}
+                      className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-full transition-all duration-200"
+                      title="Quản lý đặt lịch"
+                    >
+                      {/* Sử dụng icon Lucide List */}
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               ) : (
                 <Link

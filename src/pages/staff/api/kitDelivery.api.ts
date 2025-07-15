@@ -166,3 +166,18 @@ export const updateKitDeliveryStatus = async (id: number): Promise<{ kitDelivery
     throw error;
   }
 }; 
+
+// Lấy ExRequest theo id
+export const getExRequestById = async (id: number): Promise<any> => {
+  try {
+    const response = await axiosClient.get(`/ExRequest/${id}`, {
+      headers: {
+        Accept: '*/*',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching ExRequest with ID ${id}:`, error);
+    throw error;
+  }
+}; 

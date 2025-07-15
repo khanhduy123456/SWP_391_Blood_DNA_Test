@@ -17,3 +17,7 @@ export const adminRoutes = {
   sampleMethodManagement: '/admin/sample-methods',
   bookingModal: '/admin/booking-modal',
 };
+export const managerRoutes = {
+  requestCompleted: '/manager/request-completed',
+  exResult: '/manager/ex-result',
+};

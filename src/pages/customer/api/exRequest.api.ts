@@ -93,7 +93,7 @@ export const deleteExRequest = async (id: number): Promise<void> => {
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
-    console.error("❌ Lỗi khi xoá ExRequest:", error.response?.data || error.message);
+    console.error("Lỗi khi xoá ExRequest:", error.response?.data || error.message);
     throw error;
   }
 };

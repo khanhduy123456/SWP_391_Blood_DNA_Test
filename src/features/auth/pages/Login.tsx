@@ -88,13 +88,13 @@ const LoginForm: React.FC = () => {
           navigate("/admin/users");
           break;
         case "Staff":
-          navigate("/staff");
+          navigate("/staff/booking-assign");
           break;
         case "Manager":
           navigate("/manager/test-management");
           break;
         case "Customer":
-          navigate("/customer");
+          navigate("/customer/booking-list");
           break;
         default:
           toast.error("Role không hợp lệ");

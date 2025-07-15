@@ -3,20 +3,18 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
 import { Badge } from '@/shared/ui/badge';
-import { ArrowLeft, Calendar, User, Eye, Share2, BookOpen, Tag, Clock, TrendingUp } from 'lucide-react';
-import { getBlogPostById, getPublishedBlogPosts, type BlogPost } from '@/features/admin/api/blog.api';
+import { ArrowLeft, Calendar, User, Eye, Share2, BookOpen, Tag, Clock } from 'lucide-react';
+import { getBlogPostById, type BlogPost } from '@/features/admin/api/blog.api';
 
 const NewsDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [blogPost, setBlogPost] = useState<BlogPost | null>(null);
-  const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (id) {
       fetchBlogPost();
-      fetchRelatedPosts();
     }
   }, [id]);
 
@@ -31,19 +29,6 @@ const NewsDetail: React.FC = () => {
       console.error('Error fetching blog post:', error);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const fetchRelatedPosts = async () => {
-    try {
-      const posts = await getPublishedBlogPosts();
-      // Filter out current post and get 3 related posts
-      const filtered = posts
-        .filter(post => post.id !== parseInt(id || '0'))
-        .slice(0, 3);
-      setRelatedPosts(filtered);
-    } catch (error) {
-      console.error('Error fetching related posts:', error);
     }
   };
 
@@ -208,51 +193,6 @@ const NewsDetail: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Related Posts */}
-            {relatedPosts.length > 0 && (
-              <div className="mt-8">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-                  <TrendingUp size={24} className="text-blue-600" />
-                  Bài viết liên quan
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {relatedPosts.map((post, index) => (
-                    <Card key={`related-${post.id}-${index}`} className="hover:shadow-lg transition-all duration-300 border border-gray-100 hover:border-blue-200 group">
-                      <CardHeader className="pb-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                            {post.category}
-                          </Badge>
-                          <div className="flex items-center gap-1 text-gray-500 text-sm">
-                            <Clock size={14} />
-                            <span>{formatDate(post.createAt)}</span>
-                          </div>
-                        </div>
-                        <CardTitle className="text-lg group-hover:text-blue-600 transition-colors line-clamp-2">
-                          {post.title}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                          {post.summary}
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-gray-500 text-sm">
-                            <User size={14} />
-                            <span>{post.author}</span>
-                          </div>
-                          <Link to={`/news/${post.id}`}>
-                            <Button variant="outline" size="sm" className="border-blue-200 text-blue-600 hover:bg-blue-50">
-                              Đọc thêm
-                            </Button>
-                          </Link>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Sidebar */}

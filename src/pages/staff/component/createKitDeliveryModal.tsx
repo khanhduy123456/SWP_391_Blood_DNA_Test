@@ -5,33 +5,40 @@ import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { getAllKits } from '@/features/admin/api/kit.api';
-import { createKitDelivery } from '../api/kitDelivery.api';
+import { createKitDelivery, getExRequestById } from '../api/kitDelivery.api';
 import type { Kit } from '@/features/admin/types/kit';
 import toast from 'react-hot-toast';
 
 interface CreateKitDeliveryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  requestId: number;
   onSuccess: () => void;
 }
 
 export const CreateKitDeliveryModal: React.FC<CreateKitDeliveryModalProps> = ({
   isOpen,
   onClose,
-  requestId,
   onSuccess,
 }) => {
   const [kits, setKits] = useState<Kit[]>([]);
   const [selectedKitId, setSelectedKitId] = useState<string>('');
   const [kitType, setKitType] = useState<string>('');
+  const [requestId, setRequestId] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [kitsLoading, setKitsLoading] = useState(false);
+  const [checkingRequest, setCheckingRequest] = useState(false);
+  const [requestValid, setRequestValid] = useState(false);
+  const [requestError, setRequestError] = useState<string>('');
 
   // Fetch kits khi modal mở
   useEffect(() => {
     if (isOpen) {
       fetchKits();
+      setRequestId('');
+      setRequestValid(false);
+      setRequestError('');
+      setSelectedKitId('');
+      setKitType('');
     }
   }, [isOpen]);
 
@@ -48,9 +55,42 @@ export const CreateKitDeliveryModal: React.FC<CreateKitDeliveryModalProps> = ({
     }
   };
 
+  // Kiểm tra requestId hợp lệ và sampleMethodId === 2
+  const handleCheckRequest = async () => {
+    setCheckingRequest(true);
+    setRequestError('');
+    setRequestValid(false);
+    try {
+      const reqIdNum = parseInt(requestId);
+      if (isNaN(reqIdNum)) {
+        setRequestError('Request ID phải là số');
+        setCheckingRequest(false);
+        return;
+      }
+      const exRequest = await getExRequestById(reqIdNum);
+      if (exRequest.sampleMethodId !== 2) {
+        setRequestError('Chỉ được tạo kit delivery cho đơn hàng có phương pháp lấy mẫu là "Tự thu mẫu tại Nhà Riêng - Dân Sự" (sampleMethodId = 2)');
+        setRequestValid(false);
+      } else {
+        setRequestValid(true);
+        setRequestError('');
+      }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      setRequestError('Không tìm thấy đơn hàng hoặc lỗi server');
+      setRequestValid(false);
+    } finally {
+      setCheckingRequest(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!requestValid) {
+      toast.error('Vui lòng nhập requestId hợp lệ trước khi tạo');
+      return;
+    }
     if (!selectedKitId || !kitType.trim()) {
       toast.error('Vui lòng điền đầy đủ thông tin');
       return;
@@ -59,7 +99,7 @@ export const CreateKitDeliveryModal: React.FC<CreateKitDeliveryModalProps> = ({
     try {
       setLoading(true);
       await createKitDelivery({
-        requestId,
+        requestId: parseInt(requestId),
         kitId: parseInt(selectedKitId),
         kitType: kitType.trim(),
       });
@@ -78,6 +118,9 @@ export const CreateKitDeliveryModal: React.FC<CreateKitDeliveryModalProps> = ({
   const handleClose = () => {
     setSelectedKitId('');
     setKitType('');
+    setRequestId('');
+    setRequestValid(false);
+    setRequestError('');
     setLoading(false);
     onClose();
   };
@@ -94,21 +137,30 @@ export const CreateKitDeliveryModal: React.FC<CreateKitDeliveryModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="requestId" className="text-sm font-medium text-gray-700">
-              Request ID
+              Request ID *
             </Label>
-            <Input
-              id="requestId"
-              value={requestId}
-              disabled
-              className="bg-gray-50"
-            />
+            <div className="flex gap-2 items-center">
+              <Input
+                id="requestId"
+                value={requestId}
+                onChange={e => setRequestId(e.target.value)}
+                placeholder="Nhập requestId"
+                className="w-full"
+                disabled={loading}
+              />
+              <Button type="button" onClick={handleCheckRequest} disabled={checkingRequest || !requestId || loading} className="bg-blue-600 text-white">
+                {checkingRequest ? 'Đang kiểm tra...' : 'Kiểm tra'}
+              </Button>
+            </div>
+            {requestError && <div className="text-red-600 text-sm mt-1">{requestError}</div>}
+            {requestValid && <div className="text-green-600 text-sm mt-1">Request hợp lệ! Có thể tạo kit delivery.</div>}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="kitId" className="text-sm font-medium text-gray-700">
               Chọn KIT *
             </Label>
-            <Select value={selectedKitId} onValueChange={setSelectedKitId}>
+            <Select value={selectedKitId} onValueChange={setSelectedKitId} disabled={!requestValid}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Chọn KIT để sử dụng" />
               </SelectTrigger>
@@ -142,6 +194,7 @@ export const CreateKitDeliveryModal: React.FC<CreateKitDeliveryModalProps> = ({
               onChange={(e) => setKitType(e.target.value)}
               placeholder="Nhập loại kit (ví dụ: ADN Cha-Con, ADN Mẹ-Con...)"
               className="w-full"
+              disabled={!requestValid}
             />
           </div>
 
@@ -157,7 +210,7 @@ export const CreateKitDeliveryModal: React.FC<CreateKitDeliveryModalProps> = ({
             </Button>
             <Button
               type="submit"
-              disabled={loading || !selectedKitId || !kitType.trim()}
+              disabled={loading || !selectedKitId || !kitType.trim() || !requestValid}
               className="bg-green-600 hover:bg-green-700 text-white"
             >
               {loading ? 'Đang tạo...' : 'Tạo Kit Delivery'}

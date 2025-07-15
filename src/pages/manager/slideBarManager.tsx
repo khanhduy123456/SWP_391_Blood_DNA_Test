@@ -4,6 +4,8 @@ import {
     CalendarRange,
   TestTubeDiagonal,
   User,
+  FileText,
+  ListChecks,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 
@@ -47,6 +49,18 @@ const SidebarManager = ({ role }: SidebarProps) => {
           name: "Quản lí feedback",
           href: "/manager/feedback",
           icon: <TestTubeDiagonal size={size} />,
+          position: "top",
+        },
+        {
+          name: "Quản lí request hoàn thành",
+          href: "/manager/request-completed",
+          icon: <ListChecks size={size} />,
+          position: "top",
+        },
+        {
+          name: "Quản lí kết quả xét nghiệm",
+          href: "/manager/ex-result",
+          icon: <FileText size={size} />,
           position: "top",
         },
       ];
