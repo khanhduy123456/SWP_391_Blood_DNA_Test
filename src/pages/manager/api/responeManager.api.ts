@@ -23,7 +23,8 @@ export const createExResult = async (
       },
     });
 
-    if (response.status !== 200) {
+    // Sửa điều kiện này:
+    if (![200, 201, 204].includes(response.status)) {
       throw new Error("Tạo ExResult thất bại.");
     }
   } catch (error) {

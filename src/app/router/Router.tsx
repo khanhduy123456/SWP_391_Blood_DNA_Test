@@ -32,9 +32,9 @@ import NewsList from '@/features/home/NewsList';
 import NewsDetail from '@/features/home/NewsDetail';
 import BlogApp from '@/features/admin/pages/blogpost/blogApp';
 import ManagerLayout from '@/pages/manager/managerLayout';
-// import RequestCompletedManager from '@/pages/manager/pages/requestCompletedManager';
-// import ExResultManager from '@/pages/manager/pages/exResultManager';
-// import { managerRoutes } from '@/shared/config/routes';
+import RequestCompletedManager from '@/pages/manager/pages/requestCompletedManager';
+import ExResultManager from '@/pages/manager/pages/exResultManager';
+import { managerRoutes } from '@/shared/config/routes';
 
 export const AppRouter = () => {
   // Giả định role được lấy từ context hoặc localStorage sau khi đăng nhập
@@ -83,8 +83,8 @@ export const AppRouter = () => {
 
           {/* Manager Routes */}
           <Route element={<ManagerLayout role="Manager" />}>
-            {/* <Route path={managerRoutes.requestCompleted} element={<RequestCompletedManager />} />
-            <Route path={managerRoutes.exResult} element={<ExResultManager />} /> */}
+            <Route path={managerRoutes.requestCompleted} element={<RequestCompletedManager />} />
+            <Route path={managerRoutes.exResult} element={<ExResultManager />} />
           </Route>
 
           {/* Customer Routes */}
