@@ -1,14 +1,15 @@
 // components/Sidebar.tsx
 import { Button } from "@/shared/ui/button";
 import {
-    CalendarRange,
+  CalendarRange,
   TestTubeDiagonal,
   User,
   FileText,
   ListChecks,
+  LogOut,
 } from "lucide-react";
-import { NavLink, useLocation } from "react-router-dom";
-
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 interface NavItem {
   name: string;
@@ -23,11 +24,23 @@ interface SidebarProps {
 
 const SidebarManager = ({ role }: SidebarProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const pathname = location.pathname;
-  const size = 24;
+  const size = 20;
 
   const isNavItemActive = (currentPath: string, nav: string) => {
     return currentPath.includes(nav);
+  };
+
+  // Hàm xử lý logout
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("username");
+    toast.success("Đăng xuất thành công!");
+    navigate("/");
   };
 
   const navItems: NavItem[] = (() => {
@@ -36,31 +49,31 @@ const SidebarManager = ({ role }: SidebarProps) => {
         {
           name: "Quản lí phân loại đơn xét nghiệm",
           href: "/manager/classify-bookings",
-          icon: <CalendarRange size={size} />,
+          icon: <CalendarRange size={size} />, 
           position: "top",
         },
         {
           name: "Quản lí bài viết",
-          href: "/manager/blogs'",
-          icon: <User size={size} />,
+          href: "/manager/blogs",
+          icon: <User size={size} />, 
           position: "top",
         },
         {
           name: "Quản lí feedback",
           href: "/manager/feedback",
-          icon: <TestTubeDiagonal size={size} />,
+          icon: <TestTubeDiagonal size={size} />, 
           position: "top",
         },
         {
           name: "Quản lí request hoàn thành",
           href: "/manager/request-completed",
-          icon: <ListChecks size={size} />,
+          icon: <ListChecks size={size} />, 
           position: "top",
         },
         {
           name: "Quản lí kết quả xét nghiệm",
           href: "/manager/ex-result",
-          icon: <FileText size={size} />,
+          icon: <FileText size={size} />, 
           position: "top",
         },
       ];
@@ -69,10 +82,22 @@ const SidebarManager = ({ role }: SidebarProps) => {
   })();
 
   return (
-    <aside className="w-64 h-screen bg-white shadow-md flex flex-col justify-between">
+    <aside className="w-64 h-screen bg-gradient-to-b from-blue-50 to-white shadow-xl flex flex-col justify-between border-r border-blue-100">
       <div>
-        <div className="p-4 text-xl font-bold">Manager Management</div>
-        <nav className="space-y-1 px-2">
+        {/* Header */}
+        <div className="p-6 border-b border-blue-100">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <User className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-gray-800">Quản lý Manager</h1>
+              <p className="text-xs text-gray-500">Quản lý nghiệp vụ hệ thống</p>
+            </div>
+          </div>
+        </div>
+        {/* Navigation */}
+        <nav className="space-y-2 p-4">
           {navItems.map((item) => {
             const active = isNavItemActive(pathname, item.href);
             return (
@@ -80,10 +105,10 @@ const SidebarManager = ({ role }: SidebarProps) => {
                 key={item.name}
                 to={item.href}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  `flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${
                     active || isActive
-                      ? "bg-[#EDEBDF] text-blue-800 font-bold"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-blue-700"
+                      ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg transform scale-105"
+                      : "text-gray-600 hover:bg-blue-50 hover:text-blue-700 hover:shadow-md"
                   }`
                 }
               >
@@ -94,9 +119,14 @@ const SidebarManager = ({ role }: SidebarProps) => {
           })}
         </nav>
       </div>
-
-      <div className="p-4">
-        <Button variant="outline" className="w-full">
+      {/* Logout Button */}
+      <div className="p-4 border-t border-blue-100">
+        <Button
+          onClick={handleLogout}
+          variant="outline"
+          className="w-full bg-red-50 border-red-200 text-red-700 hover:bg-red-100 hover:border-red-300 transition-all duration-200"
+        >
+          <LogOut size={16} className="mr-2" />
           Đăng xuất
         </Button>
       </div>
@@ -104,4 +134,4 @@ const SidebarManager = ({ role }: SidebarProps) => {
   );
 };
 
-export default SidebarManager ;
+export default SidebarManager;
