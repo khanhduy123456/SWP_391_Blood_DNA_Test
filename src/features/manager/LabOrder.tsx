@@ -171,12 +171,13 @@ const LabOrderManagement: React.FC = () => {
                 ...order,
                 status: action === "accepted" ? "Processed" : "New",
                 updatedAt: new Date().toISOString().split("T")[0],
+                ...(note && { note }), // Lưu lý do từ chối nếu có
               }
             : order
         )
       );
       toast.success(
-        `Đã ${action === "accepted" ? "chấp nhận" : "từ chối"} đơn xét nghiệm ID: ${orderId}`,
+        `Đã ${action === "accepted" ? "chấp nhận" : "từ chối"} đơn xét nghiệm ID: ${orderId}${note ? ` với lý do: ${note}` : ""}`,
         { position: "top-right", duration: 3000 }
       );
     } catch (error) {
