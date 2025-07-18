@@ -15,6 +15,8 @@ const roleAccess: Record<string, UserRole[]> = {
   '/customer': ['customer'],
   '/manager': ['manager'],
   '/manager/lab-orders': ['manager'],
+  '/manager/blogs': ['manager'],
+  '/manager/feedback': ['manager'],
   '/staff': ['staff'],
   '/staff/kits': ['staff'],
   '/staff/services': ['staff'],
