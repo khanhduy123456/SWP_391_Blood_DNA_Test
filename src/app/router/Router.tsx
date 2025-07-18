@@ -19,8 +19,10 @@ import ADNChaCon from '@/pages/services/priceservice/khaisinh';
 import NotFound from '@/features/auth/pages/notFound';
 import StaffLayout from '@/pages/staff/page/staffLayout';
 import ServiceManager from '@/pages/staff/component/serviceManager';
+import LabOrders from '@/features/manager/LabOrder';
+import ManagerLayout from '@/pages/manager/component/managerLayout';
 // import BlogApp from '@/features/admin/pages/blogpost/blogApp';
-// Thêm các component cho Staff, Manager, Client
+
 
 export const AppRouter = () => {
   // Giả định role được lấy từ context hoặc localStorage sau khi đăng nhập
@@ -59,9 +61,9 @@ export const AppRouter = () => {
           </Route>
 
           {/* Manager Routes */}
-          {/* <Route element={<ManagerLayout role="Manager" />}>
-            <Route path="/manager/test-management" element={<TestManagement />} />
-          </Route> */}
+          <Route element={<ManagerLayout role="Manager" />}>
+            <Route path="/manager/lab-orders" element={<LabOrders />} />
+          </Route>
 
           {/* Client Routes */}
           {/* <Route element={<ClientLayout role="Client" />}>

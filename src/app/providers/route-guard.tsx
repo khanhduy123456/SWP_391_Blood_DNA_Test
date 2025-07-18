@@ -5,10 +5,19 @@ type UserRole = 'guest' | 'admin' | 'customer' | 'manager' | 'staff';
 const roleAccess: Record<string, UserRole[]> = {
   '/': ['guest', 'admin', 'customer', 'manager', 'staff'],
   '/login': ['guest'],
+  '/register': ['guest'],
   '/admin': ['admin'],
+  '/admin/dashboard': ['admin'],
+  '/admin/users': ['admin'],
+  '/admin/kits': ['admin'],
+  '/admin/sample-methods': ['admin'],
+  '/admin/booking-modal': ['admin'],
   '/customer': ['customer'],
   '/manager': ['manager'],
+  '/manager/lab-orders': ['manager'],
   '/staff': ['staff'],
+  '/staff/kits': ['staff'],
+  '/staff/services': ['staff'],
 };
 
 const getUser = () => {

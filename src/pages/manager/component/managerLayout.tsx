@@ -2,7 +2,7 @@
 import { Outlet } from 'react-router-dom';
 import SidebarManager from './slideBarManager';
 
-const StaffLayout = ({ role }: { role: string }) => {
+const ManagerLayout = ({ role }: { role: string }) => {
   return (
     <div className="flex">
       <SidebarManager role={role} />
@@ -13,4 +13,4 @@ const StaffLayout = ({ role }: { role: string }) => {
   );
 };
 
-export default StaffLayout;
+export default ManagerLayout;

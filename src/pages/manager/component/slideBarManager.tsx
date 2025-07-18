@@ -32,19 +32,19 @@ const SidebarManager = ({ role }: SidebarProps) => {
     if (role === "Manager") {
       return [
         {
-          name: "Quản lí phân loại đơn xét nghiệm",
-          href: "/manager/classify-bookings",
+          name: "ĐƠN XÉT NGHIỆM",
+          href: "/manager/lab-orders",
           icon: <CalendarRange size={size} />,
           position: "top",
         },
         {
-          name: "Quản lí bài viết",
-          href: "/manager/blogs'",
+          name: "QUẢN LÍ BÀI VIẾT",
+          href: "/manager/blogs",
           icon: <User size={size} />,
           position: "top",
         },
         {
-          name: "Quản lí feedback",
+          name: "QUẢN LÍ FEEDBACK",
           href: "/manager/feedback",
           icon: <TestTubeDiagonal size={size} />,
           position: "top",
@@ -57,7 +57,7 @@ const SidebarManager = ({ role }: SidebarProps) => {
   return (
     <aside className="w-64 h-screen bg-white shadow-md flex flex-col justify-between">
       <div>
-        <div className="p-4 text-xl font-bold">Manager Management</div>
+        <div className="p-4 text-xl text-center font-bold">MANAGER</div>
         <nav className="space-y-1 px-2">
           {navItems.map((item) => {
             const active = isNavItemActive(pathname, item.href);
