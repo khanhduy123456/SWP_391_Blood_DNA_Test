@@ -1,55 +1,25 @@
-# React + TypeScript + Vite
+ Bloodline DNA Testing Service Management System
+Phần mềm quản lý dịch vụ xét nghiệm ADN huyết thống
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-Currently, two official plugins are available:
+ROLE: 
+Guest
+Customer
+Staff
+Manager
+Admin
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## Expanding the ESLint configuration
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
->>>>>>> c712970203838952677bb5f8951e663d568dd237
+Phần mềm quản lý dịch vụ xét nghiệm ADN huyết thống của 01 cơ sở y tế.
+- Trang chủ giới thiệu cơ sở y tế, dịch vụ xét nghiệm ADN (dân sự, hành chính), blog chia sẽ kinh nghiệm kiến thức ADN & hướng dẫn xét nghiệm, ….
+- Chức năng cho phép người dùng đặt dịch vụ xét nghiệm bằng cách tự thu mẫu tại nhà hoặc yêu cầu cơ sở tự thu mẫu (tại nhà hoặc tại cơ sở y tế) tùy theo từng dịch vụ xét nghiệm ADN.
+- Quản lý quá trình thực hiện xét nghiệm bằmg cách tự gửi mẫu. (chỉ áp dụng cho các dịch vụ xét nghiệm ADN dân sự)
+<< Đăng ký đặt hẹn dịch vụ xét nghiệm --> Nhận bộ kit xét nghiệm --> Thu thập mẫu xét nghiệm --> Chuyển mẫu đến cơ sở y tế --> Thực hiện xét nghiệm tại cơ sở y tế và ghi nhận kết quả --> Trả kết quả xét nghiệm >>
+- Quản lý quá trình thực hiện xét nghiệm tại cơ sở y tế
+<< Đăng ký đặt hẹn dịch vụ xét nghiệm --> Nhân viên cơ sở y tế thu thập mẫu và cập nhật đơn yêu cầu xét nghiệm --> Thực hiện xét nghiệm tại cơ sở y tế và ghi nhận kết quả --> Trả kết quả xét nghiệm >>
+- Chức năng cho phép người dùng xem kết quả xét nghiệm trên hệ thống
+- Khai báo thông tin dịch vụ xét nghiệm, bảng giá, ...
+- Quản lý rating, feedback.
+- Quản lý hồ sơ người dùng, lịch sử đặt xét nghiệm.
+- Dashboard & Report.
