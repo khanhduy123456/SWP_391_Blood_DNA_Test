@@ -168,6 +168,7 @@ export const updateKitDeliveryStatus = async (id: number): Promise<{ kitDelivery
 }; 
 
 // Lấy ExRequest theo id
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const getExRequestById = async (id: number): Promise<any> => {
   try {
     const response = await axiosClient.get(`/ExRequest/${id}`, {

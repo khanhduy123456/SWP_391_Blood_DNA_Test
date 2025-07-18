@@ -60,7 +60,7 @@ const SidebarStaff = ({ role }: SidebarProps) => {
         },
         {
           name: "Kết quả xét nghiệm",
-          href: "/staff/test-results",
+          href: "/staff/result-upload",
           icon: <FileText size={size} />,
           position: "top",
         },

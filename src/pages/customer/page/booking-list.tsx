@@ -11,6 +11,7 @@ import { CheckCircleIcon, XCircleIcon, ClockIcon, FlaskConicalIcon, UserCircle2I
 import UpdateBooking from "../components/update-booking";
 import DeleteBooking from "../components/delete-booking";
 import { Toaster } from "react-hot-toast";
+import { getKitDeliveryByRequestId, type KitDelivery } from "@/pages/staff/api/delivery.api";
 
 function parseJwt(token: string) {
   try {
@@ -38,6 +39,23 @@ const statusIcon = (statusName: string) => {
 
 const PAGE_SIZE = 5;
 
+// Mapping trạng thái request (ExRequest)
+const requestStatusMap: Record<string, string> = {
+  "1": "Not Accept",
+  "2": "Accepted",
+  "3": "SampleCollected",
+  "4": "Processing",
+  "5": "Completed",
+};
+
+// Mapping trạng thái kit delivery
+const kitDeliveryStatusMap: Record<string, string> = {
+  "Pending": "Chờ xử lý",
+  "Sent": "Đã gửi",
+  "Received": "Đã nhận",
+  "Returned": "Đã trả",
+};
+
 export default function BookingList() {
   const [requests, setRequests] = useState<ExRequestResponse[]>([]);
   const [services, setServices] = useState<Service[]>([]);
@@ -49,6 +67,7 @@ export default function BookingList() {
   const [selectedBooking, setSelectedBooking] = useState<ExRequestResponse | null>(null);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [kitDeliveries, setKitDeliveries] = useState<Record<number, KitDelivery>>({});
 
   useEffect(() => {
     async function fetchData() {
@@ -78,6 +97,27 @@ export default function BookingList() {
         ]);
         setServices(serviceList);
         setSampleMethods(sampleMethodList);
+        
+        // Lấy thông tin kit delivery cho các request có methodId = 2
+        const deliveryRequests = items.filter(req => req.sampleMethodId === 2);
+        const deliveryPromises = deliveryRequests.map(async (req) => {
+          try {
+            const delivery = await getKitDeliveryByRequestId(req.id);
+            return { requestId: req.id, delivery };
+          } catch {
+            console.log(`Không tìm thấy kit delivery cho request ${req.id}`);
+            return { requestId: req.id, delivery: null };
+          }
+        });
+        
+        const deliveryResults = await Promise.all(deliveryPromises);
+        const deliveryMap: Record<number, KitDelivery> = {};
+        deliveryResults.forEach(result => {
+          if (result.delivery) {
+            deliveryMap[result.requestId] = result.delivery;
+          }
+        });
+        setKitDeliveries(deliveryMap);
       } finally {
         setLoading(false);
       }
@@ -119,6 +159,27 @@ export default function BookingList() {
         }
         setRequests(items);
         setTotalPages(data.totalPages || 1);
+        
+        // Lấy thông tin kit delivery cho các request có methodId = 2
+        const deliveryRequests = items.filter(req => req.sampleMethodId === 2);
+        const deliveryPromises = deliveryRequests.map(async (req) => {
+          try {
+            const delivery = await getKitDeliveryByRequestId(req.id);
+            return { requestId: req.id, delivery };
+          } catch {
+            console.log(`Không tìm thấy kit delivery cho request ${req.id}`);
+            return { requestId: req.id, delivery: null };
+          }
+        });
+        
+        const deliveryResults = await Promise.all(deliveryPromises);
+        const deliveryMap: Record<number, KitDelivery> = {};
+        deliveryResults.forEach(result => {
+          if (result.delivery) {
+            deliveryMap[result.requestId] = result.delivery;
+          }
+        });
+        setKitDeliveries(deliveryMap);
       } finally {
         setLoading(false);
       }
@@ -176,17 +237,23 @@ export default function BookingList() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 mt-2 md:mt-0">
-                        {statusIcon(req.statusName)}
+                        {statusIcon(requestStatusMap[req.statusId] || "Unknown")}
                         <span className={
-                          req.statusName === "Not Accept"
+                          req.statusId === "1"
                             ? "text-red-600 font-semibold"
-                            : req.statusName === "Accepted"
+                            : req.statusId === "2"
                             ? "text-green-600 font-semibold"
-                            : "text-yellow-600 font-semibold"
+                            : req.statusId === "3"
+                            ? "text-blue-600 font-semibold"
+                            : req.statusId === "4"
+                            ? "text-cyan-600 font-semibold"
+                            : req.statusId === "5"
+                            ? "text-emerald-600 font-semibold"
+                            : "text-gray-600 font-semibold"
                         }>
-                          {req.statusName}
+                          {requestStatusMap[req.statusId] || "Unknown"}
                         </span>
-                        {req.statusName === "Not Accept" && (
+                        {req.statusId === "1" && (
                           <div className="flex items-center gap-2">
                             <Button 
                               size="sm" 
@@ -226,6 +293,28 @@ export default function BookingList() {
                         <div>
                           <span className="font-medium">Ngày cập nhật:</span> {new Date(req.updateAt).toLocaleString("vi-VN")}
                         </div>
+                        {req.sampleMethodId === 2 && (
+                          <div>
+                            <span className="font-medium">Trạng thái vận chuyển:</span>{" "}
+                            {kitDeliveries[req.id] ? (
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                kitDeliveries[req.id].statusId === 'Pending'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : kitDeliveries[req.id].statusId === 'Sent'
+                                  ? 'bg-orange-100 text-orange-800'
+                                  : kitDeliveries[req.id].statusId === 'Received'
+                                  ? 'bg-green-100 text-green-800'
+                                  : kitDeliveries[req.id].statusId === 'Returned'
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {kitDeliveryStatusMap[kitDeliveries[req.id].statusId] || "Không xác định"}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">Chưa có thông tin</span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </AccordionContent>
                   </AccordionItem>

@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { MoreVertical, Pencil, Trash2, Package, Truck, CheckCircle } from 'lucide-react';
-import type { KitDelivery, PagedKitDeliveryResponse } from '../api/kitDelivery.api';
-import { getPagedKitDeliveries, deleteKitDelivery, updateKitDeliveryStatus } from '../api/kitDelivery.api';
+import { MoreVertical, Pencil, Trash2, Package, Truck, CheckCircle, Plus } from 'lucide-react';
+import type { KitDelivery, PagedKitDeliveryResponse } from '../api/delivery.api';
+import { getPagedKitDeliveries, deleteKitDeliveryById, updateKitDeliveryStatus } from '../api/delivery.api';
 import { getAllKits } from '@/features/admin/api/kit.api';
 import type { Kit } from '@/features/admin/types/kit';
 import toast from 'react-hot-toast';
@@ -13,6 +13,7 @@ import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
+import { CreateKitDeliveryModal } from '../component/createKitDeliveryModal';
 
 function formatDateTime(dateString: string) {
   const date = new Date(dateString);
@@ -57,6 +58,7 @@ function KitDeliveryManagement() {
   const [sortOrder, setSortOrder] = useState<'default' | 'desc' | 'asc'>('default');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [kits, setKits] = useState<Kit[]>([]);
+  const [isCreateModalOpen, setCreateModalOpen] = useState(false);
 
   const fetchDeliveries = async (pageNumber: number, pageSize: number, order: 'default' | 'desc' | 'asc' = sortOrder) => {
     setLoading(true);
@@ -162,6 +164,13 @@ function KitDeliveryManagement() {
               <option value="asc">Cũ nhất lên trên</option>
             </select>
           </div>
+          <Button
+            onClick={() => setCreateModalOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+          >
+            <Plus size={16} />
+            Tạo Kit Delivery
+          </Button>
         </div>
 
         {/* Search Bar */}
@@ -343,12 +352,25 @@ function KitDeliveryManagement() {
           )}
         </div>
 
+        {/* Create Modal */}
+        <CreateKitDeliveryModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setCreateModalOpen(false)}
+          onSuccess={() => {
+            fetchDeliveries(deliveriesData.pageNumber, deliveriesData.pageSize);
+            toast.success('Kit delivery đã được tạo thành công!', {
+              duration: 3000,
+              position: 'bottom-right',
+            });
+          }}
+        />
+
         {/* Update Modal */}
         {selectedDelivery && (
           <UpdateKitDeliveryModal
             isOpen={isUpdateModalOpen}
             onClose={() => setUpdateModalOpen(false)}
-            delivery={{ ...selectedDelivery, status: getStatusId(selectedDelivery) }}
+            delivery={{ ...selectedDelivery, statusId: getStatusId(selectedDelivery) }}
             kits={kits}
             onSuccess={() => {
               fetchDeliveries(deliveriesData.pageNumber, deliveriesData.pageSize);
@@ -383,7 +405,7 @@ function KitDeliveryManagement() {
                 onClick={async () => {
                   if (confirmDelete.delivery) {
                     try {
-                      await deleteKitDelivery(confirmDelete.delivery.id);
+                      await deleteKitDeliveryById(confirmDelete.delivery.id);
                       toast.success(`Kit delivery đã được xoá thành công!`, {
                         duration: 3000,
                         position: 'bottom-right',
@@ -413,7 +435,7 @@ function KitDeliveryManagement() {
 interface UpdateKitDeliveryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  delivery: KitDelivery;
+  delivery: KitDelivery & { statusId: string };
   kits: Kit[];
   onSuccess: () => void;
 }
@@ -427,7 +449,7 @@ const UpdateKitDeliveryModal: React.FC<UpdateKitDeliveryModalProps> = ({
 }) => {
   const [selectedKitId, setSelectedKitId] = useState<string>(delivery.kitId.toString());
   const [kitType, setKitType] = useState<string>(delivery.kitType);
-  const currentStatus = getStatusId(delivery);
+  const currentStatus = delivery.statusId;
   // Nếu đã là Sent thì chỉ cho phép giữ nguyên Sent, không cho chọn Pending nữa
   const [status, setStatus] = useState<string>(currentStatus === 'Pending' || currentStatus === 'Sent' ? currentStatus : 'Sent');
   const [loading, setLoading] = useState(false);
@@ -464,7 +486,7 @@ const UpdateKitDeliveryModal: React.FC<UpdateKitDeliveryModalProps> = ({
   const handleClose = () => {
     setSelectedKitId(delivery.kitId.toString());
     setKitType(delivery.kitType);
-    setStatus(currentStatus === 'Pending' || currentStatus === 'Sent' ? currentStatus : 'Sent');
+    setStatus(delivery.statusId === 'Pending' || delivery.statusId === 'Sent' ? delivery.statusId : 'Sent');
     setLoading(false);
     onClose();
   };

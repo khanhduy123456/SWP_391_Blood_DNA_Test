@@ -24,6 +24,7 @@ import CusLayout from '@/pages/customer/cusLayout';
 import { BookingPage } from '@/pages/customer/page/booking';
 import Profile from '@/pages/customer/page/profile';
 import BookingList from '@/pages/customer/page/booking-list';
+import ResultCus from '@/pages/customer/page/resultCus';
 import DNAKhaiSinhPage from '@/pages/services/priceservice/khaisinh';
 import ServiceManager from '@/pages/staff/page/serviceManager';
 import BookingAssign from '@/pages/staff/page/bookingAssign';
@@ -35,6 +36,7 @@ import ManagerLayout from '@/pages/manager/managerLayout';
 import RequestCompletedManager from '@/pages/manager/pages/requestCompletedManager';
 import ExResultManager from '@/pages/manager/pages/exResultManager';
 import { managerRoutes } from '@/shared/config/routes';
+import ResultUploadManager from '@/pages/staff/page/resultUploadManager';
 
 export const AppRouter = () => {
   // Giả định role được lấy từ context hoặc localStorage sau khi đăng nhập
@@ -79,6 +81,7 @@ export const AppRouter = () => {
             <Route path="/staff/services" element={<ServiceManager/>} />
             <Route path="/staff/booking-assign" element={<BookingAssign/>} />
             <Route path="/staff/kit-deliveries" element={<KitDeliveryManagement/>} />
+            <Route path="/staff/result-upload" element={<ResultUploadManager/>} />
           </Route>
 
           {/* Manager Routes */}
@@ -94,6 +97,7 @@ export const AppRouter = () => {
             <Route path="/customer/booking-page" element={<BookingPage />} />
             <Route path="/customer/booking-list" element={<BookingList />} />
             <Route path="/customer/profile" element={<Profile />} />
+            <Route path="/customer/results" element={<ResultCus />} />
             <Route path="/customer/booking-modal" element={<BookingModal isOpen={true} onClose={() => {}} userId={1} />} />
           </Route>
         </Route>

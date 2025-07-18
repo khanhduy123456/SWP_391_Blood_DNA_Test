@@ -5,6 +5,7 @@ const ENDPOINT = {
   CREATE_EXRESULT: "/ExResult",
   GET_EXRESULT_PAGED: (page = 1, size = 10) =>
     `/ExResult/paged?pageNumber=${page}&pageSize=${size}`,
+  GET_EX_RESULT_BY_ID: (id: number) => `/ExResult/${id}`,
 };
 
 export interface CreateExResult {
@@ -23,7 +24,6 @@ export const createExResult = async (
       },
     });
 
-    // Sửa điều kiện này:
     if (![200, 201, 204].includes(response.status)) {
       throw new Error("Tạo ExResult thất bại.");
     }
@@ -68,5 +68,71 @@ export const getPagedExResults = async (
   } catch (error) {
     console.error("Lỗi khi lấy danh sách kết quả xét nghiệm:", error);
     throw new Error("Không thể tải danh sách kết quả.");
+  }
+};
+export interface ExResult {
+  id: number;
+  requestId: number;
+  fileUrl: string;
+  resultDate: string;
+  createAt: string;
+  updateAt: string;
+}
+export const getExResultById = async (id: number): Promise<ExResult> => {
+  try {
+    const response = await axiosClient.get(
+      ENDPOINT.GET_EX_RESULT_BY_ID(id),
+      {
+        headers: {
+          Accept: "*/*",
+        },
+      }
+    );
+
+    if (response.status === 200 && response.data) {
+      return response.data as ExResult;
+    }
+
+    throw new Error(`Unexpected status code: ${response.status}`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    console.error(`Lỗi khi lấy ExResult với ID ${id}:`, error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const updateExResult = async (
+  id: number,
+  data: { fileUrl: string; resultDate: string }
+): Promise<void> => {
+  try {
+    const response = await axiosClient.put(`/ExResult/${id}`, data, {
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+    });
+    if (![200, 204].includes(response.status)) {
+      throw new Error("Cập nhật ExResult thất bại.");
+    }
+  } catch (error) {
+    console.error("Lỗi khi cập nhật ExResult:", error);
+    throw error;
+  }
+};
+
+export const getExResultByRequestId = async (requestId: number): Promise<ExResult> => {
+  try {
+    const response = await axiosClient.get(`/ExResult/by-request/${requestId}`, {
+      headers: { Accept: "*/*" },
+    });
+    if (response.status === 200 && response.data) {
+      return response.data as ExResult;
+    }
+    throw new Error("Không tìm thấy kết quả cho request này");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    console.error(`Lỗi khi lấy ExResult theo requestId ${requestId}:`, error.response?.data || error.message);
+    throw error;
   }
 };

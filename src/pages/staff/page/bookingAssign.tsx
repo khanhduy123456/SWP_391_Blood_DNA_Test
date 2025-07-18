@@ -25,6 +25,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import { CreateKitDeliveryModal } from '../component/createKitDeliveryModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { updateExRequestStatus } from '../api/exRequestStaff.api';
+import { getKitDeliveryByRequestId, type KitDelivery } from '../api/delivery.api';
 
 // Hàm parseJwt để lấy userId từ accessToken
 function parseJwt(token: string) {
@@ -87,6 +88,7 @@ const BookingAssign: React.FC = () => {
   const [detailDialog, setDetailDialog] = useState<{ open: boolean; booking?: (typeof bookings)[0] }>(
     { open: false }
   );
+  const [kitDeliveries, setKitDeliveries] = useState<Record<number, KitDelivery>>({});
   // Đặt sau khi bookings, statusFilter đã có giá trị
   // Lọc thêm theo ngày hôm nay nếu onlyToday bật
   const today = new Date();
@@ -180,6 +182,27 @@ const BookingAssign: React.FC = () => {
         };
       });
       setBookings(extendedBookings);
+      
+      // Lấy thông tin kit delivery cho các request có methodId = 2
+      const deliveryRequests = extendedBookings.filter(booking => booking.sampleMethodId === 2);
+      const deliveryPromises = deliveryRequests.map(async (booking) => {
+        try {
+          const delivery = await getKitDeliveryByRequestId(booking.id);
+          return { requestId: booking.id, delivery };
+        } catch {
+          console.log(`Không tìm thấy kit delivery cho request ${booking.id}`);
+          return { requestId: booking.id, delivery: null };
+        }
+      });
+      
+      const deliveryResults = await Promise.all(deliveryPromises);
+      const deliveryMap: Record<number, KitDelivery> = {};
+      deliveryResults.forEach(result => {
+        if (result.delivery) {
+          deliveryMap[result.requestId] = result.delivery;
+        }
+      });
+      setKitDeliveries(deliveryMap);
       
       // Hiển thị thông báo phù hợp
       if (bookingsData.length === 0) {
@@ -452,6 +475,28 @@ const BookingAssign: React.FC = () => {
                           <div className="flex items-center space-x-2 text-sm text-gray-600">
                             <span>Trạng thái: {booking.statusName || status.name}</span>
                           </div>
+                          {booking.sampleMethodId === 2 && (
+                            <div className="flex items-center space-x-2 text-sm text-gray-600">
+                              <span>Trạng thái vận chuyển: </span>
+                              {kitDeliveries[booking.id] ? (
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  kitDeliveries[booking.id].statusId === 'Pending' 
+                                    ? 'bg-yellow-100 text-yellow-800' 
+                                    : kitDeliveries[booking.id].statusId === 'Sent' 
+                                    ? 'bg-orange-100 text-orange-800'
+                                    : kitDeliveries[booking.id].statusId === 'Received' 
+                                    ? 'bg-green-100 text-green-800'
+                                    : 'bg-red-100 text-red-800'
+                                }`}>
+                                  {kitDeliveries[booking.id].statusId === 'Pending' ? 'Chờ xử lý' :
+                                   kitDeliveries[booking.id].statusId === 'Sent' ? 'Đã gửi' :
+                                   kitDeliveries[booking.id].statusId === 'Received' ? 'Đã nhận' : 'Đã trả'}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400">Chưa có thông tin</span>
+                              )}
+                            </div>
+                          )}
                           <div className="flex items-center space-x-2 text-sm text-gray-600">
                             <Calendar className="w-4 h-4" />
                             <span>Ngày hẹn: {formatDate(booking.appointmentTime)}</span>
