@@ -41,7 +41,7 @@ const RegisterForm: React.FC = () => {
   const handleRegister = async (values: Register) => {
     setLoading(true);
     const registerData: RegisterUser = {
-      fullName: values.fullName.trim(), // Đảm bảo trim khoảng trắng
+      name: values.fullName.trim(), // Đổi từ fullName sang name
       email: values.email.trim().toLowerCase(), // Trim và chuyển về lowercase
       phone: values.phone.trim(), // Trim khoảng trắng
       address: values.address.trim(), // Trim khoảng trắng

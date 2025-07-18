@@ -6,7 +6,7 @@ const ENDPOINT = {
 };
 
 export interface RegisterUser {
-  fullName: string;
+  name: string;
   email: string;
   phone: string;
   address: string;
