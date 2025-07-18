@@ -35,7 +35,9 @@ import { Textarea } from "@/shared/ui/textarea";
 import { CheckCircle, ChevronDown, XCircle } from "lucide-react";
 import * as React from "react";
 import toast, { Toaster } from "react-hot-toast";
-import { getStaffList, type Staff } from "./api/index.ts";
+import { getStaffList, type Staff } from "./api/getAllStaff.api.ts";
+import { getAllRequests, type Request } from "./api/getAllRequest.api.ts";
+import ViewDetail from "./RequestDetail.tsx";
 
 // Định nghĩa kiểu dữ liệu
 type LabOrder = {
@@ -45,50 +47,40 @@ type LabOrder = {
   sampleMethod: string;
   status: "New" | "Processed" | "Assigned";
   assignedStaff?: string;
+  assignedStaffId?: number;
   createdAt: string;
   updatedAt: string;
 };
 
-// Dữ liệu giả lập
-const initialOrders: LabOrder[] = [
-  {
-    id: "XN001",
-    customerName: "Nguyễn Văn A",
-    serviceType: "ADN Dân sự",
-    sampleMethod: "Tự thu mẫu",
-    status: "New",
-    createdAt: "2025-07-01",
-    updatedAt: "2025-07-01",
-  },
-  {
-    id: "XN002",
-    customerName: "Trần Thị B",
-    serviceType: "ADN",
-    sampleMethod: "Tại cơ sở y tế",
-    status: "Processed",
-    createdAt: "2025-07-02",
-    updatedAt: "2025-07-02",
-  },
-  {
-    id: "XN003",
-    customerName: "Lê Văn C",
-    serviceType: "ADN Cha Con",
-    sampleMethod: "Tự thu mẫu",
-    status: "Assigned",
-    assignedStaff: "test2@gmail.com",
-    createdAt: "2025-07-03",
-    updatedAt: "2025-07-03",
-  },
-];
+// Ánh xạ dữ liệu từ API sang LabOrder
+const mapRequestToLabOrder = (request: Request): LabOrder => ({
+  id: request.id.toString(),
+  customerName: request.userName,
+  serviceType: request.serviceName,
+  sampleMethod: request.sampleMethodName,
+  status:
+    request.statusId === "1"
+      ? "New"
+      : request.staffId !== 0
+      ? "Assigned"
+      : "Processed",
+  assignedStaff: request.staffId !== 0 ? request.staffName : undefined,
+  assignedStaffId: request.staffId !== 0 ? request.staffId : undefined,
+  createdAt: request.createAt,
+  updatedAt: request.updateAt,
+});
 
 const LabOrderManagement: React.FC = () => {
   const [activeTab, setActiveTab] = React.useState<"New" | "Processed" | "Assigned">("New");
   const [currentPage, setCurrentPage] = React.useState(1);
-  const [orders, setOrders] = React.useState<LabOrder[]>(initialOrders);
+  const [orders, setOrders] = React.useState<LabOrder[]>([]);
+  const [requests, setRequests] = React.useState<Request[]>([]); // Thêm state để lưu dữ liệu gốc
   const [staffList, setStaffList] = React.useState<Staff[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = React.useState(false);
   const [isRejectReasonDialogOpen, setIsRejectReasonDialogOpen] = React.useState(false);
+  const [isViewDetailOpen, setIsViewDetailOpen] = React.useState(false);
+  const [selectedRequest, setSelectedRequest] = React.useState<Request | null>(null);
   const [dialogAction, setDialogAction] = React.useState<"accepted" | "rejected" | null>(null);
   const [dialogOrderId, setDialogOrderId] = React.useState<string | null>(null);
   const [rejectReason, setRejectReason] = React.useState(
@@ -96,15 +88,20 @@ const LabOrderManagement: React.FC = () => {
   );
   const itemsPerPage = 10;
 
-  // Lấy danh sách nhân viên từ API
+  // Lấy danh sách nhân viên và request từ API
   React.useEffect(() => {
-    const fetchStaff = async () => {
+    const fetchData = async () => {
       try {
         setIsLoading(true);
-        const staffData = await getStaffList();
+        const [staffData, requestData] = await Promise.all([
+          getStaffList(),
+          getAllRequests(),
+        ]);
         setStaffList(staffData);
+        setRequests(requestData); // Lưu dữ liệu gốc
+        setOrders(requestData.map(mapRequestToLabOrder));
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Lỗi khi lấy danh sách nhân viên", {
+        toast.error(error instanceof Error ? error.message : "Lỗi khi lấy dữ liệu", {
           position: "top-right",
           duration: 3000,
         });
@@ -112,7 +109,7 @@ const LabOrderManagement: React.FC = () => {
         setIsLoading(false);
       }
     };
-    fetchStaff();
+    fetchData();
   }, []);
 
   // Lọc dữ liệu theo tab
@@ -128,7 +125,7 @@ const LabOrderManagement: React.FC = () => {
     } else {
       return orders
         .filter((order) => order.status === "Assigned")
-        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.createdAt).getTime());
     }
   };
 
@@ -161,7 +158,7 @@ const LabOrderManagement: React.FC = () => {
     }
   };
 
-  const processAction = (orderId: string, action: "accepted" | "rejected", note?: string) => {
+  const processAction = (orderId: string, action: "accepted" | "rejected") => {
     setIsLoading(true);
     try {
       setOrders((prevOrders) =>
@@ -171,13 +168,24 @@ const LabOrderManagement: React.FC = () => {
                 ...order,
                 status: action === "accepted" ? "Processed" : "New",
                 updatedAt: new Date().toISOString().split("T")[0],
-                ...(note && { note }), // Lưu lý do từ chối nếu có
               }
             : order
         )
       );
+      setRequests((prevRequests) =>
+        prevRequests.map((request) =>
+          request.id.toString() === orderId
+            ? {
+                ...request,
+                statusId: action === "accepted" ? "2" : "1",
+                statusName: action === "accepted" ? "Accepted" : "Not Accept",
+                updateAt: new Date().toISOString(),
+              }
+            : request
+        )
+      );
       toast.success(
-        `Đã ${action === "accepted" ? "chấp nhận" : "từ chối"} đơn xét nghiệm ID: ${orderId}${note ? ` với lý do: ${note}` : ""}`,
+        `Đã ${action === "accepted" ? "chấp nhận" : "từ chối"} đơn xét nghiệm ID: ${orderId}`,
         { position: "top-right", duration: 3000 }
       );
     } catch (error) {
@@ -199,25 +207,49 @@ const LabOrderManagement: React.FC = () => {
       return;
     }
     if (dialogOrderId && dialogAction) {
-      processAction(dialogOrderId, dialogAction, rejectReason);
+      processAction(dialogOrderId, dialogAction);
     }
   };
 
   // Giao nhân viên
-  const assignStaff = (orderId: string, staffEmail: string) => {
+  const assignStaff = (orderId: string, staff: Staff) => {
     setOrders((prev) =>
       prev.map((order) =>
         order.id === orderId
-          ? { ...order, assignedStaff: staffEmail, status: "Assigned", updatedAt: new Date().toISOString().split("T")[0] }
+          ? {
+              ...order,
+              assignedStaff: staff.fullName || staff.email,
+              assignedStaffId: staff.id,
+              status: "Assigned",
+              updatedAt: new Date().toISOString().split("T")[0],
+            }
           : order
+      )
+    );
+    setRequests((prevRequests) =>
+      prevRequests.map((request) =>
+        request.id.toString() === orderId
+          ? {
+              ...request,
+              staffId: staff.id,
+              staffName: staff.fullName || staff.email,
+              statusId: "2",
+              statusName: "Accepted",
+              updateAt: new Date().toISOString(),
+            }
+          : request
       )
     );
     toast.success(`Đã phân công nhân viên cho đơn ID: ${orderId}`, { position: "top-right", duration: 3000 });
   };
 
   // Xem chi tiết
-  const handleViewDetail = (orderId: string) => {
-    toast(`Xem chi tiết đơn: ${orderId}`, { position: "top-right", duration: 3000 });
+  const handleViewDetail = (order: LabOrder) => {
+    const request = requests.find((r) => r.id.toString() === order.id);
+    if (request) {
+      setSelectedRequest(request);
+      setIsViewDetailOpen(true);
+    }
   };
 
   // Nút hành động
@@ -226,7 +258,7 @@ const LabOrderManagement: React.FC = () => {
       <Button
         variant="link"
         className="text-blue-500 p-0 underline hover:text-blue-700"
-        onClick={() => handleViewDetail(order.id)}
+        onClick={() => handleViewDetail(order)}
       >
         Xem chi tiết
       </Button>
@@ -263,18 +295,18 @@ const LabOrderManagement: React.FC = () => {
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="default" className="w-[98px] px-2 h-7 text-sm">
-              Phân công <ChevronDown className="h-4 w-4" />
+            <Button variant="default" className="w-[90px] px-2 h-7 text-sm">
+              Phân công <ChevronDown className="ml-1 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             {staffList.map((staff) => (
               <DropdownMenuItem
                 key={staff.id}
-                onClick={() => assignStaff(order.id, staff.email)}
+                onClick={() => assignStaff(order.id, staff)}
                 className="flex items-center gap-2"
               >
-                {staff.name || staff.email}
+                {staff.fullName || staff.email}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -329,7 +361,7 @@ const LabOrderManagement: React.FC = () => {
                 <TableHead className="w-[20%]">Loại dịch vụ</TableHead>
                 <TableHead className="w-[20%]">Phương thức lấy mẫu</TableHead>
                 <TableHead className="w-[12%]">Xem chi tiết</TableHead>
-                <TableHead className="w-[12%]">
+                <TableHead className="w-[16%]">
                   {activeTab === "New" ? "Xử lý" : activeTab === "Processed" ? "Phân công" : "Tên nhân viên"}
                 </TableHead>
               </TableRow>
@@ -348,9 +380,7 @@ const LabOrderManagement: React.FC = () => {
                     {activeTab === "New" || activeTab === "Processed" ? (
                       <StatusButton order={order} />
                     ) : (
-                      staffList.find((staff) => staff.email === order.assignedStaff)?.name ||
-                      order.assignedStaff ||
-                      "Chưa phân công"
+                      order.assignedStaff || "Chưa phân công"
                     )}
                   </TableCell>
                 </TableRow>
@@ -425,6 +455,14 @@ const LabOrderManagement: React.FC = () => {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+
+          {selectedRequest && (
+            <ViewDetail
+              open={isViewDetailOpen}
+              onOpenChange={setIsViewDetailOpen}
+              request={selectedRequest}
+            />
+          )}
 
           <Toaster />
         </div>
