@@ -37,6 +37,7 @@ import RequestCompletedManager from '@/pages/manager/pages/requestCompletedManag
 import ExResultManager from '@/pages/manager/pages/exResultManager';
 import { managerRoutes } from '@/shared/config/routes';
 import ResultUploadManager from '@/pages/staff/page/resultUploadManager';
+import LabOrders from '@/features/manager/LabOrder';
 
 export const AppRouter = () => {
   // Giả định role được lấy từ context hoặc localStorage sau khi đăng nhập
@@ -88,6 +89,7 @@ export const AppRouter = () => {
           <Route element={<ManagerLayout role="Manager" />}>
             <Route path={managerRoutes.requestCompleted} element={<RequestCompletedManager />} />
             <Route path={managerRoutes.exResult} element={<ExResultManager />} />
+            <Route path="/manager/lab-orders" element={<LabOrders />} />
           </Route>
 
           {/* Customer Routes */}

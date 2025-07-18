@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const client = axios.create({
-  baseURL: 'https://api.dna-hospital.com', 
+  baseURL: 'https://cdel-production.up.railway.app/api/', 
   headers: {
     'Content-Type': 'application/json',
   },
