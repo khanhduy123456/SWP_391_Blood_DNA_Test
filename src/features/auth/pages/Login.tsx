@@ -158,7 +158,7 @@ const LoginForm: React.FC = () => {
           navigate("/(manager/test-management");
           break;
         case "Customer":
-          navigate("/customer");
+          navigate("/customer/booking-list");
           break;
         default:
           toast.error("Role không hợp lệ");
