@@ -88,10 +88,10 @@ const LoginForm: React.FC = () => {
           navigate("/admin/dashboard");
           break;
         case "Staff":
-          navigate("/staff");
+          navigate("/staff/booking-assign");
           break;
         case "Manager":
-          navigate("/manager/test-management");
+          navigate("/manager/lab-orders");
           break;
         case "Customer":
           navigate("/customer/booking-list");
