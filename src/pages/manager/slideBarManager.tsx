@@ -2,7 +2,6 @@
 import { Button } from "@/shared/ui/button";
 import {
   CalendarRange,
-  TestTubeDiagonal,
   User,
   FileText,
   ListChecks,
@@ -50,18 +49,6 @@ const SidebarManager = ({ role }: SidebarProps) => {
           name: "ĐƠN XÉT NGHIỆM",
           href: "/manager/lab-orders",
           icon: <CalendarRange size={size} />, 
-          position: "top",
-        },
-        {
-          name: "Quản lí bài viết",
-          href: "/manager/blogs",
-          icon: <User size={size} />, 
-          position: "top",
-        },
-        {
-          name: "Quản lí feedback",
-          href: "/manager/feedback",
-          icon: <TestTubeDiagonal size={size} />, 
           position: "top",
         },
         {
