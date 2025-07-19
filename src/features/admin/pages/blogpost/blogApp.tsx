@@ -5,16 +5,16 @@ import {
   createBlogPost, 
   updateBlogPost, 
   deleteBlogPost, 
-  type BlogPost,
+  type BlogPost as ApiBlogPost,
   type CreateBlogPostRequest 
 } from '@/features/admin/api/blog.api';
 
 const BlogApp: React.FC = () => {
-  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [blogPosts, setBlogPosts] = useState<ApiBlogPost[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
-  const [previewPost, setPreviewPost] = useState<BlogPost | null>(null);
+  const [editingPost, setEditingPost] = useState<ApiBlogPost | null>(null);
+  const [previewPost, setPreviewPost] = useState<ApiBlogPost | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<CreateBlogPostRequest>({
     title: '',
@@ -22,7 +22,7 @@ const BlogApp: React.FC = () => {
     summary: '',
     author: '',
     category: '',
-    isPublished: false
+    isPublished: true // Luôn set thành true như đã thay đổi trong blogpost.tsx
   });
 
   useEffect(() => {
@@ -55,12 +55,12 @@ const BlogApp: React.FC = () => {
     }
   };
 
-  const handleCreateBlogPost = async (data: CreateBlogPostRequest): Promise<BlogPost | null> => {
+  const handleCreateBlogPost = async (data: CreateBlogPostRequest): Promise<ApiBlogPost | null> => {
     try {
       setIsLoading(true);
       const result = await createBlogPost(data);
       if (result) {
-        const newPost: BlogPost = {
+        const newPost: ApiBlogPost = {
           id: result.blogId,
           title: result.title,
           content: data.content,

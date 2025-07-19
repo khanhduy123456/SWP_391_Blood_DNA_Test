@@ -13,7 +13,7 @@ export interface BlogPost {
   id: number;
   title: string;
   content: string;
-  summary: string;
+  summary?: string;
   author: string;
   category: string;
   isPublished: boolean;
@@ -27,7 +27,7 @@ export interface BlogPost {
 export interface CreateBlogPostRequest {
   title: string;
   content: string;
-  summary: string;
+  summary?: string;
   author: string;
   category: string;
   isPublished: boolean;
@@ -38,7 +38,7 @@ export interface CreateBlogPostRequest {
 export interface UpdateBlogPostRequest {
   title: string;
   content: string;
-  summary: string;
+  summary?: string;
   author: string;
   category: string;
   isPublished: boolean;
@@ -50,7 +50,7 @@ export interface BlogPostResponse {
   blogId: number;
   title: string;
   author: string;
-  summary: string;
+  summary?: string;
   category: string;
   isPublished: boolean;
 }

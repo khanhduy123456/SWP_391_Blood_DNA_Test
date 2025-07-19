@@ -30,9 +30,9 @@ function formatDateTime(dateString: string) {
 // Status mapping
 const statusMapping: Record<string, { name: string; color: string; icon: React.ReactNode }> = {
   'Pending': { name: 'Chờ xử lý', color: 'bg-yellow-100 text-yellow-800', icon: <Package size={16} /> },
-  'Sent': { name: 'Đã gửi', color: 'bg-orange-100 text-orange-800', icon: <Truck size={16} /> },
-  'Received': { name: 'Đã nhận', color: 'bg-green-100 text-green-800', icon: <CheckCircle size={16} /> },
-  'Returned': { name: 'Đã trả', color: 'bg-red-100 text-red-800', icon: <Trash2 size={16} /> }
+  'Sent': { name: 'Đã gửi đến nhà', color: 'bg-orange-100 text-orange-800', icon: <Truck size={16} /> },
+  'Received': { name: 'Người dùng đã nhận', color: 'bg-green-100 text-green-800', icon: <CheckCircle size={16} /> },
+  'Returned': { name: 'Người dùng đã gửi lại', color: 'bg-red-100 text-red-800', icon: <Trash2 size={16} /> }
 };
 
 // Helper lấy statusId đúng cho mọi nơi
@@ -50,7 +50,6 @@ function KitDeliveryManagement() {
     hasNextPage: false,
   });
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [selectedDelivery, setSelectedDelivery] = useState<KitDelivery | null>(null);
   const [isUpdateModalOpen, setUpdateModalOpen] = useState(false);
@@ -62,7 +61,6 @@ function KitDeliveryManagement() {
 
   const fetchDeliveries = async (pageNumber: number, pageSize: number, order: 'default' | 'desc' | 'asc' = sortOrder) => {
     setLoading(true);
-    setError(null);
     try {
       let data;
       if (order === 'default') {
@@ -72,7 +70,7 @@ function KitDeliveryManagement() {
       }
       setDeliveriesData(data);
     } catch {
-      setError('Lấy dữ liệu kit delivery thất bại');
+      toast.error('Lấy dữ liệu kit delivery thất bại');
     } finally {
       setLoading(false);
     }
@@ -206,13 +204,9 @@ function KitDeliveryManagement() {
             </div>
           )}
 
-          {error && (
-            <div className="text-center py-10 text-red-600 font-semibold">
-              {error}
-            </div>
-          )}
+          {/* Xóa phần hiện lỗi lớn ở giữa bảng, chỉ hiện toast */}
 
-          {!loading && !error && (
+          {!loading && (
             <>
               <table className="min-w-full text-sm text-left relative z-0">
                 <thead>

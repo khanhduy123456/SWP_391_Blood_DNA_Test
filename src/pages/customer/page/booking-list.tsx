@@ -7,11 +7,12 @@ import type { Service } from "@/pages/staff/type/service";
 import type { SampleMethod } from "@/features/admin/types/method";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/shared/ui/accordion";
 import { Button } from "@/shared/ui/button";
-import { CheckCircleIcon, XCircleIcon, ClockIcon, FlaskConicalIcon, UserCircle2Icon, ChevronLeft, ChevronRight, Trash2Icon } from "lucide-react";
+import { CheckCircleIcon, XCircleIcon, ClockIcon, FlaskConicalIcon, UserCircle2Icon, ChevronLeft, ChevronRight, Trash2Icon, PackageIcon, TruckIcon } from "lucide-react";
 import UpdateBooking from "../components/update-booking";
 import DeleteBooking from "../components/delete-booking";
 import { Toaster } from "react-hot-toast";
-import { getKitDeliveryByRequestId, type KitDelivery } from "@/pages/staff/api/delivery.api";
+import { getKitDeliveryByRequestId, acknowledgeKitDeliveryStatus, type KitDelivery } from "@/pages/staff/api/delivery.api";
+import toast from "react-hot-toast";
 
 function parseJwt(token: string) {
   try {
@@ -51,9 +52,9 @@ const requestStatusMap: Record<string, string> = {
 // Mapping trạng thái kit delivery
 const kitDeliveryStatusMap: Record<string, string> = {
   "Pending": "Chờ xử lý",
-  "Sent": "Đã gửi",
-  "Received": "Đã nhận",
-  "Returned": "Đã trả",
+  "Sent": "Đã gửi đến nhà",
+  "Received": " Người dùng đã nhận",
+  "Returned": "Đã gửi lại cơ sở",
 };
 
 export default function BookingList() {
@@ -137,6 +138,8 @@ export default function BookingList() {
     setSelectedBooking(booking);
     setIsDeleteModalOpen(true);
   };
+
+
 
   const handleUpdateSuccess = () => {
     // Refresh data after successful update
@@ -294,22 +297,69 @@ export default function BookingList() {
                           <span className="font-medium">Ngày cập nhật:</span> {new Date(req.updateAt).toLocaleString("vi-VN")}
                         </div>
                         {req.sampleMethodId === 2 && (
-                          <div>
+                          <div className="col-span-1 md:col-span-2">
                             <span className="font-medium">Trạng thái vận chuyển:</span>{" "}
                             {kitDeliveries[req.id] ? (
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                kitDeliveries[req.id].statusId === 'Pending'
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : kitDeliveries[req.id].statusId === 'Sent'
-                                  ? 'bg-orange-100 text-orange-800'
-                                  : kitDeliveries[req.id].statusId === 'Received'
-                                  ? 'bg-green-100 text-green-800'
-                                  : kitDeliveries[req.id].statusId === 'Returned'
-                                  ? 'bg-red-100 text-red-800'
-                                  : 'bg-gray-100 text-gray-800'
-                              }`}>
-                                {kitDeliveryStatusMap[kitDeliveries[req.id].statusId] || "Không xác định"}
-                              </span>
+                              <div className="flex flex-col gap-2 mt-2">
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium inline-block w-fit ${
+                                  kitDeliveries[req.id].statusId === 'Pending'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : kitDeliveries[req.id].statusId === 'Sent'
+                                    ? 'bg-orange-100 text-orange-800'
+                                    : kitDeliveries[req.id].statusId === 'Received'
+                                    ? 'bg-green-100 text-green-800'
+                                    : kitDeliveries[req.id].statusId === 'Returned'
+                                    ? 'bg-red-100 text-red-800'
+                                    : 'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {kitDeliveryStatusMap[kitDeliveries[req.id].statusId] || "Không xác định"}
+                                </span>
+                                
+                                {/* Nút cập nhật trạng thái cho kit delivery */}
+                                {kitDeliveries[req.id].statusId === 'Sent' && (
+                                  <div className="flex flex-wrap gap-2 mt-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-xs px-3 py-1 border-green-500 text-green-700 hover:bg-green-50"
+                                      onClick={async () => {
+                                        try {
+                                          await acknowledgeKitDeliveryStatus(kitDeliveries[req.id].id, 'Received');
+                                          toast.success('Đã xác nhận nhận kit thành công!');
+                                          handleUpdateSuccess();
+                                        } catch {
+                                          toast.error('Xác nhận nhận kit thất bại!');
+                                        }
+                                      }}
+                                    >
+                                      <PackageIcon size={14} className="mr-1" />
+                                      Đã nhận kit
+                                    </Button>
+                                  </div>
+                                )}
+                                
+                                {kitDeliveries[req.id].statusId === 'Received' && (
+                                  <div className="flex flex-wrap gap-2 mt-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-xs px-3 py-1 border-blue-500 text-blue-700 hover:bg-blue-50"
+                                      onClick={async () => {
+                                        try {
+                                          await acknowledgeKitDeliveryStatus(kitDeliveries[req.id].id, 'Returned');
+                                          toast.success('Đã xác nhận gửi lại kit thành công!');
+                                          handleUpdateSuccess();
+                                        } catch {
+                                          toast.error('Xác nhận gửi lại kit thất bại!');
+                                        }
+                                      }}
+                                    >
+                                      <TruckIcon size={14} className="mr-1" />
+                                      Đã gửi lại cơ sở
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
                             ) : (
                               <span className="text-gray-400">Chưa có thông tin</span>
                             )}

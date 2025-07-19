@@ -25,7 +25,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import { CreateKitDeliveryModal } from '../component/createKitDeliveryModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { updateExRequestStatus } from '../api/exRequestStaff.api';
-import { getKitDeliveryByRequestId, type KitDelivery } from '../api/delivery.api';
+import { getKitDeliveryByRequestId, type KitDelivery, acknowledgeKitDeliveryStatus } from '../api/delivery.api';
 
 // Hàm parseJwt để lấy userId từ accessToken
 function parseJwt(token: string) {
@@ -538,7 +538,7 @@ const BookingAssign: React.FC = () => {
                               Bắt đầu xử lý
                             </Button>
                           )}
-                          {booking.sampleMethodId === 2 && (
+                          {booking.sampleMethodId === 2 && !kitDeliveries[booking.id] && (
                             <Button 
                               size="sm"
                               className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -551,8 +551,47 @@ const BookingAssign: React.FC = () => {
                             </Button>
                           )}
                         </div>
-                        {/* Thêm nút cập nhật trạng thái nếu có nextStatus */}
-                        {nextStatusMap[booking.statusId] && (
+                        {/* Nút xác nhận trạng thái Kit Delivery */}
+                        {booking.sampleMethodId === 2 && kitDeliveries[booking.id] && (
+                          <div className="flex flex-col gap-2 mt-2">
+                            {kitDeliveries[booking.id].statusId === 'Sent' && (
+                              <Button
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                                onClick={async () => {
+                                  try {
+                                    await acknowledgeKitDeliveryStatus(kitDeliveries[booking.id].id, 'Received');
+                                    toast.success('Đã xác nhận người dùng ĐÃ NHẬN Kit!');
+                                    fetchData();
+                                  } catch {
+                                    toast.error('Xác nhận người dùng ĐÃ NHẬN Kit thất bại!');
+                                  }
+                                }}
+                              >
+                                Xác nhận người dùng ĐÃ NHẬN kit
+                              </Button>
+                            )}
+                            {kitDeliveries[booking.id].statusId === 'Received' && (
+                              <Button
+                                size="sm"
+                                className="bg-red-600 hover:bg-red-700 text-white"
+                                onClick={async () => {
+                                  try {
+                                    await acknowledgeKitDeliveryStatus(kitDeliveries[booking.id].id, 'Returned');
+                                    toast.success('Đã xác nhận ĐÃ TRẢ kit delivery!');
+                                    fetchData();
+                                  } catch {
+                                    toast.error('Xác nhận ĐÃ TRẢ kit delivery thất bại!');
+                                  }
+                                }}
+                              >
+                                Xác nhận ĐÃ TRẢ kit
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                        {/* Nút cập nhật trạng thái request chỉ enable khi kit delivery đã Returned */}
+                        {(!booking.sampleMethodId || booking.sampleMethodId !== 2 || (kitDeliveries[booking.id] && kitDeliveries[booking.id].statusId === 'Returned')) && nextStatusMap[booking.statusId] && (
                           <Button
                             size="sm"
                             className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -610,7 +649,9 @@ const BookingAssign: React.FC = () => {
             onSuccess={() => {
               // Có thể refresh data hoặc thêm logic khác nếu cần
               toast.success('Kit delivery đã được tạo thành công!');
+              fetchData(); // Refresh data sau khi tạo thành công
             }}
+            requestId={selectedRequestId}
           />
         )}
 

@@ -11,6 +11,7 @@ const ENDPOINT = {
   GET_EX_REQUESTS_BY_STAFF: (staffId: number) => `/ExRequest/staff/${staffId}`,
   GET_KIT_DELIVERY_BY_REQUEST_ID: (requestId: number) =>
     `/KitDelivery/by-request/${requestId}`,
+  ACKNOWLEDGE_KIT_DELIVERY: (id: number) => `/KitDelivery/${id}/acknowledge`,
 };
 
 export interface KitDelivery {
@@ -141,7 +142,7 @@ export const createKitDelivery = async (
       },
     });
 
-    if (response.status === 200) {
+    if (response.status === 200 || response.status === 201) {
       return response.data;
     }
 
@@ -209,32 +210,51 @@ export const deleteKitDeliveryById = async (id: number): Promise<void> => {
   }
 };
 
-// Cập nhật trạng thái kit delivery
-export const updateKitDeliveryStatus = async (id: number): Promise<void> => {
+// Cập nhật trạng thái kit delivery (từ Pending → Sent)
+export const updateKitDeliveryStatus = async (
+  kitDeliveryId: number,
+): Promise<{
+  kitDeliveryId: number;
+  status: string;
+  receivedAt: string;
+}> => {
   try {
-    console.log(`Gọi API cập nhật trạng thái KitDelivery ID = ${id}`);
-    const response = await axiosClient.patch(ENDPOINT.UPDATE_KIT_DELIVERY_STATUS(id), {}, {
-      headers: {
-        Accept: "*/*",
-        "Content-Type": "application/json",
+    console.log(` Gọi API PATCH trạng thái KitDelivery ID = ${kitDeliveryId}`);
+
+    const response = await axiosClient.patch(
+      ENDPOINT.UPDATE_KIT_DELIVERY_STATUS(kitDeliveryId),
+      {}, // không cần body
+      {
+        headers: {
+          Accept: "application/json", // hoặc "text/plain" nếu BE trả về plain text
+        },
       },
-    });
+    );
 
     if (response.status === 200) {
-      console.log("Cập nhật trạng thái thành công");
-      return;
+      console.log("Cập nhật trạng thái thành công:", response.data);
+      return response.data;
     }
 
     throw new Error(`Unexpected status code: ${response.status}`);
   } catch (error: unknown) {
-    console.error("Lỗi khi cập nhật trạng thái KitDelivery:", error);
+    console.error(" Lỗi khi cập nhật trạng thái KitDelivery:", error);
+
     if (error && typeof error === "object" && "response" in error) {
-      const axiosError = error as { response?: { status?: number; data?: unknown } };
-      console.log("Chi tiết lỗi:", axiosError.response?.status, axiosError.response?.data);
+      const axiosError = error as {
+        response?: { status?: number; data?: unknown };
+      };
+      console.log(
+        "Chi tiết lỗi:",
+        axiosError.response?.status,
+        axiosError.response?.data,
+      );
     }
+
     throw new Error("Không thể cập nhật trạng thái KitDelivery");
   }
 };
+
 
 // Lấy danh sách ExRequest theo staffId
 export const getExRequestsByStaffId = async (staffId: number): Promise<ExRequest[]> => {
@@ -314,3 +334,50 @@ export const getKitDeliveryByRequestId = async (
     throw error;
   }
 };
+
+export const acknowledgeKitDeliveryStatus = async (
+  kitDeliveryId: number,
+  status: "Received" | "Returned"
+): Promise<{
+  kitDeliveryId: number;
+  status: string;
+  receivedAt: string;
+}> => {
+  try {
+    console.log(`Gọi API xác nhận KitDelivery ID = ${kitDeliveryId}, status = ${status}`);
+
+    const response = await axiosClient.patch(
+      `/KitDelivery/${kitDeliveryId}/acknowledge`,
+      { status },
+      {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (response.status === 200) {
+      console.log("Xác nhận trạng thái thành công:", response.data);
+      return response.data;
+    }
+
+    throw new Error(` Unexpected status code: ${response.status}`);
+  } catch (error: unknown) {
+    console.error("Lỗi khi xác nhận KitDelivery:", error);
+
+    if (error && typeof error === "object" && "response" in error) {
+      const axiosError = error as {
+        response?: { status?: number; data?: unknown };
+      };
+      console.log(
+        "Chi tiết lỗi:",
+        axiosError.response?.status,
+        axiosError.response?.data
+      );
+    }
+
+    throw new Error("Không thể xác nhận KitDelivery");
+  }
+};
+
