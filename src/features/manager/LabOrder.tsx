@@ -51,7 +51,7 @@ import * as React from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { getStaffList, type Staff } from "./api/getAllStaff.api.ts";
 import { getAllRequests, type Request } from "./api/getAllRequest.api.ts";
-import { assignStaffToExRequest, acceptExRequest } from "./api/requestManager.api.ts";
+import { assignStaffToExRequest, acceptExRequest, cancelExRequest } from "./api/requestManager.api.ts";
 import ViewDetail from "./RequestDetail.tsx";
 
 // Định nghĩa kiểu dữ liệu
@@ -60,7 +60,7 @@ type LabOrder = {
   customerName: string;
   serviceType: string;
   sampleMethod: string;
-  status: "New" | "Processed" | "Assigned";
+  status: "New" | "Processed" | "Assigned" | "Rejected";
   assignedStaff?: string;
   assignedStaffId?: number;
   createdAt: string;
@@ -76,6 +76,10 @@ const mapRequestToLabOrder = (request: Request): LabOrder => ({
   status:
     request.statusId === "1"
       ? "New"
+      : request.statusId === "2"
+      ? "Processed"
+      : request.statusId === "6"
+      ? "Rejected"
       : request.staffId !== 0
       ? "Assigned"
       : "Processed",
@@ -86,7 +90,7 @@ const mapRequestToLabOrder = (request: Request): LabOrder => ({
 });
 
 const LabOrderManagement: React.FC = () => {
-  const [activeTab, setActiveTab] = React.useState<"New" | "Processed" | "Assigned">("New");
+  const [activeTab, setActiveTab] = React.useState<"New" | "Processed" | "Assigned" | "Rejected">("New");
   const [currentPage, setCurrentPage] = React.useState(1);
   const [orders, setOrders] = React.useState<LabOrder[]>([]);
   const [requests, setRequests] = React.useState<Request[]>([]); // Thêm state để lưu dữ liệu gốc
@@ -137,9 +141,13 @@ const LabOrderManagement: React.FC = () => {
       return orders
         .filter((order) => order.status === "Processed")
         .sort((a, b) => b.id.localeCompare(a.id));
-    } else {
+    } else if (activeTab === "Assigned") {
       return orders
         .filter((order) => order.status === "Assigned")
+        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.createdAt).getTime());
+    } else {
+      return orders
+        .filter((order) => order.status === "Rejected")
         .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.createdAt).getTime());
     }
   };
@@ -211,31 +219,34 @@ const LabOrderManagement: React.FC = () => {
           duration: 3000 
         });
       } else {
-        // Xử lý từ chối (giữ nguyên logic cũ vì chưa có API)
+        // Gọi API để từ chối/hủy request
+        await cancelExRequest(parseInt(orderId));
+        
+        // Cập nhật state local sau khi hủy thành công
         setOrders((prevOrders) =>
           prevOrders.map((order) =>
             order.id === orderId
               ? {
                   ...order,
-                  status: "New",
+                  status: "Rejected",
                   updatedAt: new Date().toISOString().split("T")[0],
                 }
               : order
           )
         );
         
-        setRequests((prevRequests) =>
-          prevRequests.map((request) =>
-            request.id.toString() === orderId
-              ? {
-                  ...request,
-                  statusId: "1",
-                  statusName: "Not Accept",
-                  updateAt: new Date().toISOString(),
-                }
-              : request
-          )
-        );
+                        setRequests((prevRequests) =>
+                  prevRequests.map((request) =>
+                    request.id.toString() === orderId
+                      ? {
+                          ...request,
+                          statusId: "6",
+                          statusName: "Cancelled",
+                          updateAt: new Date().toISOString(),
+                        }
+                      : request
+                  )
+                );
         
         toast.success(`Đã từ chối đơn xét nghiệm ID: ${orderId}`, { 
           position: "top-right", 
@@ -410,6 +421,8 @@ const LabOrderManagement: React.FC = () => {
           return { color: "bg-blue-100 text-blue-800 border-blue-200", icon: Microscope };
         case "Assigned":
           return { color: "bg-green-100 text-green-800 border-green-200", icon: UserCheck };
+        case "Rejected":
+          return { color: "bg-red-100 text-red-800 border-red-200", icon: XCircle };
         default:
           return { color: "bg-gray-100 text-gray-800 border-gray-200", icon: AlertTriangle };
       }
@@ -421,7 +434,7 @@ const LabOrderManagement: React.FC = () => {
     return (
       <Badge className={`${config.color} border`}>
         <IconComponent className="h-3 w-3 mr-1" />
-        {status === "New" ? "Mới" : status === "Processed" ? "Đã xử lý" : "Đã phân công"}
+        {status === "New" ? "Mới" : status === "Processed" ? "Đã xử lý" : status === "Assigned" ? "Đã phân công" : "Đã từ chối"}
       </Badge>
     );
   };
@@ -494,12 +507,24 @@ const LabOrderManagement: React.FC = () => {
                   <Users className="h-4 w-4 mr-2" />
                   ĐÃ PHÂN CÔNG
                 </Button>
+                <Button
+                  variant={activeTab === "Rejected" ? "default" : "ghost"}
+                  onClick={() => setActiveTab("Rejected")}
+                  className={`flex-1 rounded-md transition-all ${
+                    activeTab === "Rejected" 
+                      ? "bg-white shadow-sm text-blue-600" 
+                      : "text-gray-600 hover:text-blue-600"
+                  }`}
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  ĐÃ TỪ CHỐI
+                </Button>
               </div>
             </CardContent>
           </Card>
 
           {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <Card className="border-l-4 border-l-orange-500 shadow-sm">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
@@ -539,6 +564,19 @@ const LabOrderManagement: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+            <Card className="border-l-4 border-l-red-500 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Đã từ chối</p>
+                    <p className="text-2xl font-bold text-red-600">
+                      {orders.filter(order => order.status === "Rejected").length}
+                    </p>
+                  </div>
+                  <XCircle className="h-8 w-8 text-red-500" />
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Table */}
@@ -561,7 +599,7 @@ const LabOrderManagement: React.FC = () => {
                         <TableHead className="w-[12%] font-semibold text-gray-700">Trạng thái</TableHead>
                         <TableHead className="w-[12%] font-semibold text-gray-700">Chi tiết</TableHead>
                         <TableHead className="w-[12%] font-semibold text-gray-700">
-                          {activeTab === "New" ? "Xử lý" : activeTab === "Processed" ? "Phân công" : "Nhân viên"}
+                          {activeTab === "New" ? "Xử lý" : activeTab === "Processed" ? "Phân công" : activeTab === "Assigned" ? "Nhân viên" : "Trạng thái"}
                         </TableHead>
                       </TableRow>
                     </TableHeader>
@@ -578,16 +616,21 @@ const LabOrderManagement: React.FC = () => {
                           <TableCell>
                             <ActionButton order={order} />
                           </TableCell>
-                          <TableCell>
-                            {activeTab === "New" || activeTab === "Processed" ? (
-                              <StatusButton order={order} />
-                            ) : (
-                              <div className="flex items-center gap-2">
-                                <UserCheck className="h-4 w-4 text-green-600" />
-                                <span className="text-sm font-medium">{order.assignedStaff || "Chưa phân công"}</span>
-                              </div>
-                            )}
-                          </TableCell>
+                                                  <TableCell>
+                          {activeTab === "New" || activeTab === "Processed" ? (
+                            <StatusButton order={order} />
+                          ) : activeTab === "Assigned" ? (
+                            <div className="flex items-center gap-2">
+                              <UserCheck className="h-4 w-4 text-green-600" />
+                              <span className="text-sm font-medium">{order.assignedStaff || "Chưa phân công"}</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <XCircle className="h-4 w-4 text-red-600" />
+                              <span className="text-sm font-medium text-red-600">Đã từ chối</span>
+                            </div>
+                          )}
+                        </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -599,8 +642,10 @@ const LabOrderManagement: React.FC = () => {
                         <Clock className="h-12 w-12 text-gray-400" />
                       ) : activeTab === "Processed" ? (
                         <Microscope className="h-12 w-12 text-gray-400" />
-                      ) : (
+                      ) : activeTab === "Assigned" ? (
                         <Users className="h-12 w-12 text-gray-400" />
+                      ) : (
+                        <XCircle className="h-12 w-12 text-gray-400" />
                       )}
                     </div>
                     <h3 className="text-lg font-semibold text-gray-600 mb-2">
@@ -608,7 +653,9 @@ const LabOrderManagement: React.FC = () => {
                         ? "Không có đơn xét nghiệm mới" 
                         : activeTab === "Processed" 
                         ? "Không có đơn đã xử lý" 
-                        : "Không có đơn đã phân công"
+                        : activeTab === "Assigned"
+                        ? "Không có đơn đã phân công"
+                        : "Không có đơn đã từ chối"
                       }
                     </h3>
                     <p className="text-gray-500 text-center max-w-md">
@@ -616,7 +663,9 @@ const LabOrderManagement: React.FC = () => {
                         ? "Hiện tại chưa có đơn xét nghiệm ADN mới nào cần xử lý. Vui lòng kiểm tra lại sau."
                         : activeTab === "Processed" 
                         ? "Hiện tại chưa có đơn xét nghiệm ADN nào đã được xử lý. Các đơn mới sẽ xuất hiện ở đây sau khi được chấp nhận."
-                        : "Hiện tại chưa có đơn xét nghiệm ADN nào đã được phân công cho nhân viên. Các đơn đã xử lý sẽ xuất hiện ở đây sau khi được phân công."
+                        : activeTab === "Assigned"
+                        ? "Hiện tại chưa có đơn xét nghiệm ADN nào đã được phân công cho nhân viên. Các đơn đã xử lý sẽ xuất hiện ở đây sau khi được phân công."
+                        : "Hiện tại chưa có đơn xét nghiệm ADN nào đã bị từ chối. Các đơn từ chối sẽ xuất hiện ở đây sau khi được xử lý."
                       }
                     </p>
                   </div>
