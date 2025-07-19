@@ -6,27 +6,13 @@ import { Textarea } from '@/shared/ui/textarea';
 import { Badge } from '@/shared/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { Checkbox } from '@/shared/ui/checkbox';
-import { Search, Plus, Edit, Trash2, Settings, Eye, EyeOff, Calendar, User, Tag, Image, Save, X, ExternalLink } from 'lucide-react';
-
-interface BlogPost {
-  id: number;
-  title: string;
-  content: string;
-  summary: string;
-  author: string;
-  category: string;
-  isPublished: boolean;
-  createAt: string;
-  updateAt?: string;
-  imageUrl?: string;
-  tags?: string[];
-  viewCount?: number;
-}
+import { Search, Plus, Edit, Trash2, Settings, Eye, EyeOff, Calendar, User, Tag, Save, X, ExternalLink } from 'lucide-react';
+import { type BlogPost } from '@/features/admin/api/blog.api';
 
 interface CreateBlogRequest {
   title: string;
   content: string;
-  summary: string;
+  summary?: string;
   author: string;
   category: string;
   isPublished: boolean;
@@ -84,20 +70,23 @@ export const renderAdminBlogPost = ({
   const componentId = `blog-admin-${Date.now()}`;
   
   const handleSubmit = async () => {
-    if (!formData.title.trim() || !formData.content.trim() || !formData.summary.trim() || !formData.author.trim() || !formData.category) return;
+    if (!formData.title.trim() || !formData.content.trim() || !formData.author.trim() || !formData.category) return;
+
+    // Luôn set isPublished thành true
+    const submitData = { ...formData, isPublished: true };
 
     if (editingPost) {
-      const success = await updateBlogPost(editingPost.id, formData);
+      const success = await updateBlogPost(editingPost.id, submitData);
       if (success) {
         setEditingPost(null);
-        setFormData({ title: '', content: '', summary: '', author: '', category: '', isPublished: false });
+        setFormData({ title: '', content: '', author: '', category: '', isPublished: false });
         setShowCreateForm(false);
       }
     } else {
-      const result = await createBlogPost(formData);
+      const result = await createBlogPost(submitData);
       if (result) {
         setBlogPosts(prev => [{ ...result, viewCount: 0 }, ...prev]);
-        setFormData({ title: '', content: '', summary: '', author: '', category: '', isPublished: false });
+        setFormData({ title: '', content: '', author: '', category: '', isPublished: false });
         setShowCreateForm(false);
       }
     }
@@ -111,7 +100,7 @@ export const renderAdminBlogPost = ({
       summary: post.summary || '',
       author: post.author || '',
       category: post.category || '',
-      isPublished: post.isPublished || false,
+      isPublished: true, // Luôn set thành true khi edit
       imageUrl: post.imageUrl || '',
       tags: post.tags || []
     });
@@ -121,7 +110,7 @@ export const renderAdminBlogPost = ({
   const handleCancel = () => {
     setShowCreateForm(false);
     setEditingPost(null);
-    setFormData({ title: '', content: '', summary: '', author: '', category: '', isPublished: false });
+    setFormData({ title: '', content: '', author: '', category: '', isPublished: false });
   };
 
   const filteredPosts = blogPosts.filter(post =>
@@ -246,31 +235,7 @@ export const renderAdminBlogPost = ({
                       </Select>
                     </div>
 
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium mb-2 text-gray-700">Tóm tắt *</label>
-                      <Textarea
-                        value={formData.summary}
-                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, summary: e.target.value })}
-                        placeholder="Nhập tóm tắt ngắn gọn về bài viết..."
-                        rows={3}
-                        className="border-gray-200 focus:border-blue-500"
-                      />
-                    </div>
 
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium mb-2 text-gray-700">URL hình ảnh</label>
-                      <div className="flex gap-2">
-                        <Input
-                          value={formData.imageUrl || ''}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, imageUrl: e.target.value })}
-                          placeholder="https://example.com/image.jpg"
-                          className="border-gray-200 focus:border-blue-500"
-                        />
-                        <Button variant="outline" size="sm" className="border-gray-200">
-                          <Image size={16} />
-                        </Button>
-                      </div>
-                    </div>
 
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium mb-2 text-gray-700">Nội dung chi tiết *</label>
@@ -287,11 +252,11 @@ export const renderAdminBlogPost = ({
                       <div className="flex items-center space-x-2">
                         <Checkbox
                           id="isPublished"
-                          checked={formData.isPublished}
-                          onCheckedChange={(checked) => setFormData({ ...formData, isPublished: checked as boolean })}
+                          checked={true}
+                          disabled={true}
                         />
                         <label htmlFor="isPublished" className="text-sm font-medium text-gray-700">
-                          Xuất bản ngay
+                          Đã xuất bản
                         </label>
                       </div>
                     </div>

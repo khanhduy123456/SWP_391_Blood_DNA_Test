@@ -4,7 +4,7 @@ import { Button } from '@/shared/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { Label } from '@/shared/ui/label';
 import { Input } from '@/shared/ui/input';
-import { createKitDelivery, getExRequestsByStaffId, type ExRequest } from '../api/delivery.api';
+import { createKitDelivery, getExRequestsByStaffId, type ExRequest, updateKitDeliveryStatus } from '../api/delivery.api';
 import { getAllKits } from '@/features/admin/api/kit.api';
 import type { Kit } from '@/features/admin/types/kit';
 import { getStaffIdByUserId } from '../api/staff.api';
@@ -14,6 +14,7 @@ interface CreateKitDeliveryModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  requestId?: number; // Thêm prop requestId
 }
 
 // Hàm parseJwt để lấy userId từ accessToken
@@ -39,6 +40,7 @@ export const CreateKitDeliveryModal: React.FC<CreateKitDeliveryModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
+  requestId,
 }) => {
   const [selectedRequestId, setSelectedRequestId] = useState<string>('');
   const [selectedKitId, setSelectedKitId] = useState<string>('');
@@ -77,6 +79,13 @@ export const CreateKitDeliveryModal: React.FC<CreateKitDeliveryModalProps> = ({
       fetchStaffId();
     }
   }, [isOpen]);
+
+  // Tự động set requestId khi modal mở và có requestId được truyền vào
+  useEffect(() => {
+    if (isOpen && requestId) {
+      setSelectedRequestId(requestId.toString());
+    }
+  }, [isOpen, requestId]);
 
   // Lấy danh sách requests theo staffId và lọc theo methodId = 2
   useEffect(() => {
@@ -119,25 +128,32 @@ export const CreateKitDeliveryModal: React.FC<CreateKitDeliveryModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedRequestId || !selectedKitId || !kitType.trim()) {
+    const finalRequestId = requestId || selectedRequestId;
+    
+    if (!finalRequestId || !selectedKitId || !kitType.trim()) {
       toast.error('Vui lòng điền đầy đủ thông tin');
       return;
     }
 
     try {
       setLoading(true);
-      await createKitDelivery({
-        requestId: parseInt(selectedRequestId),
+      // Tạo kit delivery
+      const created = await createKitDelivery({
+        requestId: typeof finalRequestId === 'string' ? parseInt(finalRequestId) : finalRequestId,
         kitId: parseInt(selectedKitId),
         kitType: kitType.trim(),
       });
 
-      toast.success('Tạo kit delivery thành công!');
+      // Map trạng thái kit delivery vào (nếu cần lưu lại trạng thái ở FE)
+      // Gọi API cập nhật trạng thái kit delivery ngay sau khi tạo
+      await updateKitDeliveryStatus(created.id);
+
+      toast.success('Tạo kit delivery và cập nhật trạng thái thành công!');
       onSuccess();
       handleClose();
     } catch (error) {
-      console.error('Lỗi khi tạo kit delivery:', error);
-      toast.error('Tạo kit delivery thất bại');
+      console.error('Lỗi khi tạo/cập nhật kit delivery:', error);
+      toast.error('Tạo hoặc cập nhật kit delivery thất bại');
     } finally {
       setLoading(false);
     }
@@ -171,24 +187,34 @@ export const CreateKitDeliveryModal: React.FC<CreateKitDeliveryModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="requestId" className="text-sm font-medium text-gray-700">
-              Chọn Yêu Cầu (Tự thu mẫu) *
+              Yêu Cầu (Tự thu mẫu) *
             </Label>
-            <Select value={selectedRequestId} onValueChange={setSelectedRequestId}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Chọn yêu cầu" />
-              </SelectTrigger>
-              <SelectContent>
-                {requests.map((request) => (
-                  <SelectItem key={request.id} value={request.id.toString()}>
-                    {getRequestDisplayName(request)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {requests.length === 0 && (
-              <p className="text-sm text-orange-600 mt-1">
-                Không có yêu cầu nào phù hợp (chỉ hiển thị các yêu cầu có phương thức "Tự thu mẫu tại Nhà Riêng - Dân Sự")
-              </p>
+            {requestId ? (
+              <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
+                <span className="text-sm text-gray-700">
+                  Request ID: {requestId} (Đã được chọn tự động)
+                </span>
+              </div>
+            ) : (
+              <>
+                <Select value={selectedRequestId} onValueChange={setSelectedRequestId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Chọn yêu cầu" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {requests.map((request) => (
+                      <SelectItem key={request.id} value={request.id.toString()}>
+                        {getRequestDisplayName(request)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {requests.length === 0 && (
+                  <p className="text-sm text-orange-600 mt-1">
+                    Không có yêu cầu nào phù hợp (chỉ hiển thị các yêu cầu có phương thức "Tự thu mẫu tại Nhà Riêng - Dân Sự")
+                  </p>
+                )}
+              </>
             )}
           </div>
 
@@ -240,7 +266,7 @@ export const CreateKitDeliveryModal: React.FC<CreateKitDeliveryModalProps> = ({
             </Button>
             <Button
               type="submit"
-              disabled={loading || !selectedRequestId || !selectedKitId || !kitType.trim()}
+              disabled={loading || (!requestId && !selectedRequestId) || !selectedKitId || !kitType.trim()}
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               {loading ? 'Đang tạo...' : 'Tạo Kit Delivery'}

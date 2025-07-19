@@ -30,9 +30,9 @@ function formatDateTime(dateString: string) {
 // Status mapping
 const statusMapping: Record<string, { name: string; color: string; icon: React.ReactNode }> = {
   'Pending': { name: 'Chờ xử lý', color: 'bg-yellow-100 text-yellow-800', icon: <Package size={16} /> },
-  'Sent': { name: 'Đã gửi', color: 'bg-orange-100 text-orange-800', icon: <Truck size={16} /> },
-  'Received': { name: 'Đã nhận', color: 'bg-green-100 text-green-800', icon: <CheckCircle size={16} /> },
-  'Returned': { name: 'Đã trả', color: 'bg-red-100 text-red-800', icon: <Trash2 size={16} /> }
+  'Sent': { name: 'Đã gửi đến nhà', color: 'bg-orange-100 text-orange-800', icon: <Truck size={16} /> },
+  'Received': { name: 'Người dùng đã nhận', color: 'bg-green-100 text-green-800', icon: <CheckCircle size={16} /> },
+  'Returned': { name: 'Người dùng đã gửi lại', color: 'bg-red-100 text-red-800', icon: <Trash2 size={16} /> }
 };
 
 // Helper lấy statusId đúng cho mọi nơi

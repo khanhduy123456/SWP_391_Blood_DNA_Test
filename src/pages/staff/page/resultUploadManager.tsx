@@ -53,10 +53,12 @@ const ResultUploadManager: React.FC = () => {
         const staffId = staffData.staffId;
         // Lấy danh sách request đã phân công
         const reqs = await getExRequestsByStaffId(staffId);
-        setRequests(reqs);
-        // Lấy kết quả xét nghiệm (nếu có) cho từng request
+        // Chỉ hiển thị những request có trạng thái Completed (statusId = 5)
+        const completedRequests = reqs.filter(req => req.statusId === '5');
+        setRequests(completedRequests);
+        // Lấy kết quả xét nghiệm (nếu có) cho từng request đã hoàn thành
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const resultPromises = reqs.map(async (req: any) => {
+        const resultPromises = completedRequests.map(async (req: any) => {
           try {
             const result = await getExResultByRequestId(req.id);
             return { requestId: req.id, result };
@@ -147,8 +149,8 @@ const ResultUploadManager: React.FC = () => {
           <Dna className="w-8 h-8 text-blue-700" />
         </div>
         <div>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-blue-900 tracking-tight">Quản lý kết quả xét nghiệm huyết thống ADN</h2>
-          <p className="text-blue-700 text-sm md:text-base font-medium mt-1">Danh sách các yêu cầu xét nghiệm ADN huyết thống đã được phân công cho bạn. Bạn có thể tải lên hoặc chỉnh sửa kết quả xét nghiệm (PDF) cho từng khách hàng.</p>
+          <h2 className="text-2xl md:text-3xl font-extrabold text-blue-900 tracking-tight">Upload Kết Quả Xét Nghiệm ADN</h2>
+          <p className="text-blue-700 text-sm md:text-base font-medium mt-1">Danh sách các yêu cầu xét nghiệm ADN đã hoàn thành (trạng thái "Completed"). Bạn có thể tải lên hoặc chỉnh sửa kết quả xét nghiệm (PDF) cho từng khách hàng.</p>
         </div>
       </div>
       {loading ? (
@@ -156,14 +158,21 @@ const ResultUploadManager: React.FC = () => {
       ) : (
         <div className="space-y-6">
           {requests.length === 0 && (
-            <div className="text-center text-gray-500 py-12">Bạn chưa được phân công yêu cầu nào.</div>
+            <div className="text-center text-gray-500 py-12">
+              <div className="mb-4">
+                <div className="text-6xl mb-4">📋</div>
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">Chưa có yêu cầu hoàn thành</h3>
+                <p className="text-gray-600">Hiện tại chưa có yêu cầu xét nghiệm nào đã hoàn thành để upload kết quả.</p>
+                <p className="text-gray-500 text-sm mt-2">Chỉ những yêu cầu có trạng thái "Hoàn thành" mới được hiển thị ở đây.</p>
+              </div>
+            </div>
           )}
           {requests.map((req) => (
             <div key={req.id} className="bg-gradient-to-br from-blue-50 to-green-50 rounded-xl shadow border border-blue-200 p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div className="flex-1 space-y-2">
                 <div className="flex flex-wrap gap-4 items-center mb-2">
                   <span className="font-semibold text-blue-900 text-lg">Yêu cầu #{req.id}</span>
-                  <span className="bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs font-bold">{req.statusName}</span>
+                  <span className="bg-emerald-200 text-emerald-800 px-2 py-1 rounded text-xs font-bold">✅ {req.statusName}</span>
                   <span className="bg-green-200 text-green-800 px-2 py-1 rounded text-xs font-bold">{req.serviceName || req.serviceId}</span>
                   <span className="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-xs font-bold">{req.sampleMethodName}</span>
                 </div>

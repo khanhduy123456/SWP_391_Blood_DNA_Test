@@ -1,9 +1,7 @@
 // components/Sidebar.tsx
 import { Button } from "@/shared/ui/button";
 import {
-  BadgeCheck,
   LayoutDashboard,
-  TestTubeDiagonal,
   User,
   BookOpen,
   LogOut,
@@ -56,18 +54,6 @@ const Sidebar = ({ role }: SidebarProps) => {
           name: "Quản lý người dùng",
           href: "/admin/users",
           icon: <User size={size} />, 
-          position: "top",
-        },
-        {
-          name: "Quản lý kits",
-          href: "/admin/kits",
-          icon: <TestTubeDiagonal size={size} />, 
-          position: "top",
-        },
-        {
-          name: "Quản lý phương pháp lấy mẫu",
-          href: "/admin/sample-methods",
-          icon: <BadgeCheck size={size} />, 
           position: "top",
         },
         {
