@@ -32,11 +32,26 @@ import {
   TableRow,
 } from "@/shared/ui/table";
 import { Textarea } from "@/shared/ui/textarea";
-import { CheckCircle, ChevronDown, XCircle } from "lucide-react";
+import { Badge } from "@/shared/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { 
+  CheckCircle, 
+  ChevronDown, 
+  XCircle, 
+  Dna, 
+  Microscope, 
+  Users, 
+  Clock, 
+  FileText,
+  Eye,
+  UserCheck,
+  AlertTriangle
+} from "lucide-react";
 import * as React from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { getStaffList, type Staff } from "./api/getAllStaff.api.ts";
 import { getAllRequests, type Request } from "./api/getAllRequest.api.ts";
+import { assignStaffToExRequest, acceptExRequest } from "./api/requestManager.api.ts";
 import ViewDetail from "./RequestDetail.tsx";
 
 // Định nghĩa kiểu dữ liệu
@@ -158,39 +173,81 @@ const LabOrderManagement: React.FC = () => {
     }
   };
 
-  const processAction = (orderId: string, action: "accepted" | "rejected") => {
+  const processAction = async (orderId: string, action: "accepted" | "rejected") => {
     setIsLoading(true);
     try {
-      setOrders((prevOrders) =>
-        prevOrders.map((order) =>
-          order.id === orderId
-            ? {
-                ...order,
-                status: action === "accepted" ? "Processed" : "New",
-                updatedAt: new Date().toISOString().split("T")[0],
-              }
-            : order
-        )
-      );
-      setRequests((prevRequests) =>
-        prevRequests.map((request) =>
-          request.id.toString() === orderId
-            ? {
-                ...request,
-                statusId: action === "accepted" ? "2" : "1",
-                statusName: action === "accepted" ? "Accepted" : "Not Accept",
-                updateAt: new Date().toISOString(),
-              }
-            : request
-        )
-      );
-      toast.success(
-        `Đã ${action === "accepted" ? "chấp nhận" : "từ chối"} đơn xét nghiệm ID: ${orderId}`,
-        { position: "top-right", duration: 3000 }
-      );
+      if (action === "accepted") {
+        // Gọi API để chấp nhận request
+        const response = await acceptExRequest(parseInt(orderId));
+        
+        // Cập nhật state local với dữ liệu từ API response
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order.id === orderId
+              ? {
+                  ...order,
+                  status: "Processed",
+                  updatedAt: new Date(response.updatedAt).toISOString().split("T")[0],
+                }
+              : order
+          )
+        );
+        
+        setRequests((prevRequests) =>
+          prevRequests.map((request) =>
+            request.id.toString() === orderId
+              ? {
+                  ...request,
+                  statusId: "2",
+                  statusName: "Accepted",
+                  updateAt: response.updatedAt,
+                }
+              : request
+          )
+        );
+        
+        toast.success(`Đã chấp nhận đơn xét nghiệm ID: ${orderId}`, { 
+          position: "top-right", 
+          duration: 3000 
+        });
+      } else {
+        // Xử lý từ chối (giữ nguyên logic cũ vì chưa có API)
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order.id === orderId
+              ? {
+                  ...order,
+                  status: "New",
+                  updatedAt: new Date().toISOString().split("T")[0],
+                }
+              : order
+          )
+        );
+        
+        setRequests((prevRequests) =>
+          prevRequests.map((request) =>
+            request.id.toString() === orderId
+              ? {
+                  ...request,
+                  statusId: "1",
+                  statusName: "Not Accept",
+                  updateAt: new Date().toISOString(),
+                }
+              : request
+          )
+        );
+        
+        toast.success(`Đã từ chối đơn xét nghiệm ID: ${orderId}`, { 
+          position: "top-right", 
+          duration: 3000 
+        });
+      }
     } catch (error) {
       console.error("Lỗi khi xử lý hành động:", error);
-      toast.error("Lỗi khi xử lý hành động", { position: "top-right", duration: 3000 });
+      toast.error(
+        `Lỗi khi ${action === "accepted" ? "chấp nhận" : "từ chối"} đơn xét nghiệm`, 
+        { position: "top-right", duration: 4000 }
+      );
     } finally {
       setIsLoading(false);
       setIsConfirmDialogOpen(false);
@@ -212,35 +269,56 @@ const LabOrderManagement: React.FC = () => {
   };
 
   // Giao nhân viên
-  const assignStaff = (orderId: string, staff: Staff) => {
-    setOrders((prev) =>
-      prev.map((order) =>
-        order.id === orderId
-          ? {
-              ...order,
-              assignedStaff: staff.fullName || staff.email,
-              assignedStaffId: staff.id,
-              status: "Assigned",
-              updatedAt: new Date().toISOString().split("T")[0],
-            }
-          : order
-      )
-    );
-    setRequests((prevRequests) =>
-      prevRequests.map((request) =>
-        request.id.toString() === orderId
-          ? {
-              ...request,
-              staffId: staff.id,
-              staffName: staff.fullName || staff.email,
-              statusId: "2",
-              statusName: "Accepted",
-              updateAt: new Date().toISOString(),
-            }
-          : request
-      )
-    );
-    toast.success(`Đã phân công nhân viên cho đơn ID: ${orderId}`, { position: "top-right", duration: 3000 });
+  const assignStaff = async (orderId: string, staff: Staff) => {
+    try {
+      setIsLoading(true);
+      
+      // Gọi API để phân công staff
+      const response = await assignStaffToExRequest(parseInt(orderId), staff.id);
+      
+      // Cập nhật state local
+      setOrders((prev) =>
+        prev.map((order) =>
+          order.id === orderId
+            ? {
+                ...order,
+                assignedStaff: response.assignedStaff.staffName,
+                assignedStaffId: response.assignedStaff.staffId,
+                status: "Assigned",
+                updatedAt: new Date(response.updatedAt).toISOString().split("T")[0],
+              }
+            : order
+        )
+      );
+      
+      setRequests((prevRequests) =>
+        prevRequests.map((request) =>
+          request.id.toString() === orderId
+            ? {
+                ...request,
+                staffId: response.assignedStaff.staffId,
+                staffName: response.assignedStaff.staffName,
+                statusId: "2",
+                statusName: "Accepted",
+                updateAt: response.updatedAt,
+              }
+            : request
+        )
+      );
+      
+      toast.success(`Đã phân công nhân viên ${response.assignedStaff.staffName} cho đơn ID: ${orderId}`, { 
+        position: "top-right", 
+        duration: 3000 
+      });
+    } catch (error) {
+      console.error("Lỗi khi phân công nhân viên:", error);
+      toast.error("Lỗi khi phân công nhân viên. Vui lòng thử lại.", { 
+        position: "top-right", 
+        duration: 4000 
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Xem chi tiết
@@ -256,11 +334,13 @@ const LabOrderManagement: React.FC = () => {
   const ActionButton = ({ order }: { order: LabOrder }) => {
     return (
       <Button
-        variant="link"
-        className="text-blue-500 p-0 underline hover:text-blue-700"
+        variant="outline"
+        size="sm"
+        className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
         onClick={() => handleViewDetail(order)}
       >
-        Xem chi tiết
+        <Eye className="h-4 w-4 mr-1" />
+        Chi tiết
       </Button>
     );
   };
@@ -271,20 +351,21 @@ const LabOrderManagement: React.FC = () => {
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="default" className="w-[90px] px-2 h-7 text-sm">
+            <Button variant="default" className="w-[120px] px-3 h-8 text-sm bg-blue-600 hover:bg-blue-700">
+              <FileText className="h-4 w-4 mr-1" />
               Xử lý <ChevronDown className="ml-1 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem
               onClick={() => handleAction(order.id, "accepted")}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 text-green-600 hover:text-green-700"
             >
               <CheckCircle className="h-4 w-4" /> Chấp nhận
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => handleAction(order.id, "rejected")}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 text-red-600 hover:text-red-700"
             >
               <XCircle className="h-4 w-4" /> Từ chối
             </DropdownMenuItem>
@@ -295,7 +376,8 @@ const LabOrderManagement: React.FC = () => {
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="default" className="w-[90px] px-2 h-7 text-sm">
+            <Button variant="default" className="w-[120px] px-3 h-8 text-sm bg-purple-600 hover:bg-purple-700">
+              <Users className="h-4 w-4 mr-1" />
               Phân công <ChevronDown className="ml-1 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -306,7 +388,9 @@ const LabOrderManagement: React.FC = () => {
                 onClick={() => assignStaff(order.id, staff)}
                 className="flex items-center gap-2"
               >
-                {staff.fullName || staff.email}
+                <UserCheck className="h-4 w-4" />
+                <span className="font-mono text-xs text-gray-500">#{staff.id}</span>
+                <span>{staff.fullName || staff.email}</span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -316,142 +400,317 @@ const LabOrderManagement: React.FC = () => {
     return null;
   };
 
+  // Badge trạng thái
+  const StatusBadge = ({ status }: { status: string }) => {
+    const getStatusConfig = (status: string) => {
+      switch (status) {
+        case "New":
+          return { color: "bg-orange-100 text-orange-800 border-orange-200", icon: Clock };
+        case "Processed":
+          return { color: "bg-blue-100 text-blue-800 border-blue-200", icon: Microscope };
+        case "Assigned":
+          return { color: "bg-green-100 text-green-800 border-green-200", icon: UserCheck };
+        default:
+          return { color: "bg-gray-100 text-gray-800 border-gray-200", icon: AlertTriangle };
+      }
+    };
+
+    const config = getStatusConfig(status);
+    const IconComponent = config.icon;
+
+    return (
+      <Badge className={`${config.color} border`}>
+        <IconComponent className="h-3 w-3 mr-1" />
+        {status === "New" ? "Mới" : status === "Processed" ? "Đã xử lý" : "Đã phân công"}
+      </Badge>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-blue-600 mb-6">QUẢN LÝ ĐƠN XÉT NGHIỆM</h1>
-        <div className="space-y-4 relative">
+        {/* Header Section */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg">
+              <Dna className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                QUẢN LÝ ĐƠN XÉT NGHIỆM ADN
+              </h1>
+              <p className="text-gray-600 text-sm">Hệ thống quản lý xét nghiệm huyết thống ADN</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6 relative">
           {isLoading && (
-            <div className="fixed inset-0 flex items-center justify-center bg-gray-100 bg-opacity-50 z-50">
-              <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500"></div>
+            <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-80 z-50">
+              <div className="flex flex-col items-center gap-3">
+                <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent"></div>
+                <p className="text-blue-600 font-medium">Đang tải dữ liệu...</p>
+              </div>
             </div>
           )}
 
-          <div className="flex justify-between items-center">
-            <div className="flex gap-4">
-              <Button
-                variant={activeTab === "New" ? "default" : "outline"}
-                onClick={() => setActiveTab("New")}
-                className="cursor-pointer"
-              >
-                ĐƠN MỚI
-              </Button>
-              <Button
-                variant={activeTab === "Processed" ? "default" : "outline"}
-                onClick={() => setActiveTab("Processed")}
-                className="cursor-pointer"
-              >
-                ĐÃ XỬ LÝ
-              </Button>
-              <Button
-                variant={activeTab === "Assigned" ? "default" : "outline"}
-                onClick={() => setActiveTab("Assigned")}
-                className="cursor-pointer"
-              >
-                ĐÃ PHÂN CÔNG
-              </Button>
-            </div>
+          {/* Tab Navigation */}
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-0">
+              <div className="flex gap-1 p-1 bg-gray-100 rounded-lg">
+                <Button
+                  variant={activeTab === "New" ? "default" : "ghost"}
+                  onClick={() => setActiveTab("New")}
+                  className={`flex-1 rounded-md transition-all ${
+                    activeTab === "New" 
+                      ? "bg-white shadow-sm text-blue-600" 
+                      : "text-gray-600 hover:text-blue-600"
+                  }`}
+                >
+                  <Clock className="h-4 w-4 mr-2" />
+                  ĐƠN MỚI
+                </Button>
+                <Button
+                  variant={activeTab === "Processed" ? "default" : "ghost"}
+                  onClick={() => setActiveTab("Processed")}
+                  className={`flex-1 rounded-md transition-all ${
+                    activeTab === "Processed" 
+                      ? "bg-white shadow-sm text-blue-600" 
+                      : "text-gray-600 hover:text-blue-600"
+                  }`}
+                >
+                  <Microscope className="h-4 w-4 mr-2" />
+                  ĐÃ XỬ LÝ
+                </Button>
+                <Button
+                  variant={activeTab === "Assigned" ? "default" : "ghost"}
+                  onClick={() => setActiveTab("Assigned")}
+                  className={`flex-1 rounded-md transition-all ${
+                    activeTab === "Assigned" 
+                      ? "bg-white shadow-sm text-blue-600" 
+                      : "text-gray-600 hover:text-blue-600"
+                  }`}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  ĐÃ PHÂN CÔNG
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <Card className="border-l-4 border-l-orange-500 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Đơn mới</p>
+                    <p className="text-2xl font-bold text-orange-600">
+                      {orders.filter(order => order.status === "New").length}
+                    </p>
+                  </div>
+                  <Clock className="h-8 w-8 text-orange-500" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-l-4 border-l-blue-500 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Đã xử lý</p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {orders.filter(order => order.status === "Processed").length}
+                    </p>
+                  </div>
+                  <Microscope className="h-8 w-8 text-blue-500" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-l-4 border-l-green-500 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Đã phân công</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {orders.filter(order => order.status === "Assigned").length}
+                    </p>
+                  </div>
+                  <Users className="h-8 w-8 text-green-500" />
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[12%]">ID</TableHead>
-                <TableHead className="w-[20%]">Tên khách hàng</TableHead>
-                <TableHead className="w-[20%]">Loại dịch vụ</TableHead>
-                <TableHead className="w-[20%]">Phương thức lấy mẫu</TableHead>
-                <TableHead className="w-[12%]">Xem chi tiết</TableHead>
-                <TableHead className="w-[16%]">
-                  {activeTab === "New" ? "Xử lý" : activeTab === "Processed" ? "Phân công" : "Tên nhân viên"}
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {currentItems.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell>{order.id}</TableCell>
-                  <TableCell>{order.customerName}</TableCell>
-                  <TableCell>{order.serviceType}</TableCell>
-                  <TableCell>{order.sampleMethod}</TableCell>
-                  <TableCell>
-                    <ActionButton order={order} />
-                  </TableCell>
-                  <TableCell>
-                    {activeTab === "New" || activeTab === "Processed" ? (
-                      <StatusButton order={order} />
-                    ) : (
-                      order.assignedStaff || "Chưa phân công"
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          {/* Table */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold text-gray-800">
+                Danh sách đơn xét nghiệm
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                {currentItems.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-gray-50">
+                        <TableHead className="w-[10%] font-semibold text-gray-700">ID</TableHead>
+                        <TableHead className="w-[18%] font-semibold text-gray-700">Khách hàng</TableHead>
+                        <TableHead className="w-[18%] font-semibold text-gray-700">Dịch vụ ADN</TableHead>
+                        <TableHead className="w-[18%] font-semibold text-gray-700">Phương thức</TableHead>
+                        <TableHead className="w-[12%] font-semibold text-gray-700">Trạng thái</TableHead>
+                        <TableHead className="w-[12%] font-semibold text-gray-700">Chi tiết</TableHead>
+                        <TableHead className="w-[12%] font-semibold text-gray-700">
+                          {activeTab === "New" ? "Xử lý" : activeTab === "Processed" ? "Phân công" : "Nhân viên"}
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {currentItems.map((order) => (
+                        <TableRow key={order.id} className="hover:bg-gray-50 transition-colors">
+                          <TableCell className="font-medium text-blue-600">#{order.id}</TableCell>
+                          <TableCell className="font-medium">{order.customerName}</TableCell>
+                          <TableCell className="text-gray-700">{order.serviceType}</TableCell>
+                          <TableCell className="text-gray-700">{order.sampleMethod}</TableCell>
+                          <TableCell>
+                            <StatusBadge status={order.status} />
+                          </TableCell>
+                          <TableCell>
+                            <ActionButton order={order} />
+                          </TableCell>
+                          <TableCell>
+                            {activeTab === "New" || activeTab === "Processed" ? (
+                              <StatusButton order={order} />
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <UserCheck className="h-4 w-4 text-green-600" />
+                                <span className="text-sm font-medium">{order.assignedStaff || "Chưa phân công"}</span>
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16 px-4">
+                    <div className="p-4 bg-gray-100 rounded-full mb-4">
+                      {activeTab === "New" ? (
+                        <Clock className="h-12 w-12 text-gray-400" />
+                      ) : activeTab === "Processed" ? (
+                        <Microscope className="h-12 w-12 text-gray-400" />
+                      ) : (
+                        <Users className="h-12 w-12 text-gray-400" />
+                      )}
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                      {activeTab === "New" 
+                        ? "Không có đơn xét nghiệm mới" 
+                        : activeTab === "Processed" 
+                        ? "Không có đơn đã xử lý" 
+                        : "Không có đơn đã phân công"
+                      }
+                    </h3>
+                    <p className="text-gray-500 text-center max-w-md">
+                      {activeTab === "New" 
+                        ? "Hiện tại chưa có đơn xét nghiệm ADN mới nào cần xử lý. Vui lòng kiểm tra lại sau."
+                        : activeTab === "Processed" 
+                        ? "Hiện tại chưa có đơn xét nghiệm ADN nào đã được xử lý. Các đơn mới sẽ xuất hiện ở đây sau khi được chấp nhận."
+                        : "Hiện tại chưa có đơn xét nghiệm ADN nào đã được phân công cho nhân viên. Các đơn đã xử lý sẽ xuất hiện ở đây sau khi được phân công."
+                      }
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
-          <div className="flex justify-center">
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
-                {Array.from({ length: totalPages }).map((_, i) => (
-                  <PaginationItem key={i}>
-                    <PaginationLink
-                      onClick={() => setCurrentPage(i + 1)}
-                      isActive={currentPage === i + 1}
-                    >
-                      {i + 1}
-                    </PaginationLink>
-                  </PaginationItem>
-                ))}
-                <PaginationItem>
-                  <PaginationNext
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
+          {/* Pagination */}
+          {totalPages > 1 && currentItems.length > 0 && (
+            <Card className="shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex justify-center">
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                          className={currentPage === 1 ? "pointer-events-none opacity-50" : "hover:bg-blue-50"}
+                        />
+                      </PaginationItem>
+                      {Array.from({ length: totalPages }).map((_, i) => (
+                        <PaginationItem key={i}>
+                          <PaginationLink
+                            onClick={() => setCurrentPage(i + 1)}
+                            isActive={currentPage === i + 1}
+                            className={currentPage === i + 1 ? "bg-blue-600 text-white" : "hover:bg-blue-50"}
+                          >
+                            {i + 1}
+                          </PaginationLink>
+                        </PaginationItem>
+                      ))}
+                      <PaginationItem>
+                        <PaginationNext
+                          onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                          className={currentPage === totalPages ? "pointer-events-none opacity-50" : "hover:bg-blue-50"}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
+          {/* Dialogs */}
           <AlertDialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
-            <AlertDialogContent>
+            <AlertDialogContent className="border-2 border-blue-200">
               <AlertDialogHeader>
-                <AlertDialogTitle>Xác nhận hành động</AlertDialogTitle>
-                <AlertDialogDescription>
+                <AlertDialogTitle className="flex items-center gap-2 text-blue-600">
+                  <Dna className="h-5 w-5" />
+                  Xác nhận hành động
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-gray-600">
                   Bạn có chắc chắn muốn{" "}
-                  <strong>{dialogAction === "accepted" ? "chấp nhận" : "từ chối"}</strong>{" "}
-                  đơn xét nghiệm ID: {dialogOrderId} không?
+                  <strong className="text-blue-600">{dialogAction === "accepted" ? "chấp nhận" : "từ chối"}</strong>{" "}
+                  đơn xét nghiệm ADN ID: <span className="font-mono bg-gray-100 px-2 py-1 rounded">#{dialogOrderId}</span> không?
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Hủy</AlertDialogCancel>
-                <AlertDialogAction onClick={confirmAction}>Xác nhận</AlertDialogAction>
+                <AlertDialogCancel className="border-gray-300 hover:bg-gray-50">Hủy</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={confirmAction}
+                  className={dialogAction === "accepted" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
+                >
+                  Xác nhận
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
 
           <AlertDialog open={isRejectReasonDialogOpen} onOpenChange={setIsRejectReasonDialogOpen}>
-            <AlertDialogContent>
+            <AlertDialogContent className="border-2 border-red-200">
               <AlertDialogHeader>
-                <AlertDialogTitle>Lý do từ chối</AlertDialogTitle>
-                <AlertDialogDescription>
+                <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+                  <AlertTriangle className="h-5 w-5" />
+                  Lý do từ chối
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-gray-600">
                   <Textarea
                     id="rejectReason"
                     value={rejectReason}
                     onChange={(e) => setRejectReason(e.target.value)}
-                    placeholder="Nhập lý do từ chối..."
-                    className="mt-2 min-h-[100px]"
+                    placeholder="Nhập lý do từ chối đơn xét nghiệm ADN..."
+                    className="mt-2 min-h-[100px] border-gray-300 focus:border-red-500 focus:ring-red-500"
                     required
                   />
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Hủy</AlertDialogCancel>
-                <AlertDialogAction onClick={handleSubmitRejectReason}>Gửi</AlertDialogAction>
+                <AlertDialogCancel className="border-gray-300 hover:bg-gray-50">Hủy</AlertDialogCancel>
+                <AlertDialogAction onClick={handleSubmitRejectReason} className="bg-red-600 hover:bg-red-700">
+                  Gửi
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -464,7 +723,30 @@ const LabOrderManagement: React.FC = () => {
             />
           )}
 
-          <Toaster />
+          <Toaster 
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: '#363636',
+                color: '#fff',
+              },
+              success: {
+                duration: 3000,
+                iconTheme: {
+                  primary: '#10b981',
+                  secondary: '#fff',
+                },
+              },
+              error: {
+                duration: 4000,
+                iconTheme: {
+                  primary: '#ef4444',
+                  secondary: '#fff',
+                },
+              },
+            }}
+          />
         </div>
       </div>
     </div>
