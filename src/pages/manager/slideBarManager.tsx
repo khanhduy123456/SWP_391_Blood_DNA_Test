@@ -47,8 +47,8 @@ const SidebarManager = ({ role }: SidebarProps) => {
     if (role === "Manager") {
       return [
         {
-          name: "Quản lí phân loại đơn xét nghiệm",
-          href: "/manager/classify-bookings",
+          name: "ĐƠN XÉT NGHIỆM",
+          href: "/manager/lab-orders",
           icon: <CalendarRange size={size} />, 
           position: "top",
         },
