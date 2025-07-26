@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getExRequestsByAccountId } from "../api/exRequest.api";
 import type { ExRequestResponse, PagedExRequestResponse } from "../types/exRequestPaged";
 import { getAllService } from "@/pages/staff/api/service.api";
@@ -25,7 +26,8 @@ import {
   DollarSign,
   FileText,
   Edit3,
-  Eye
+  Eye,
+  CheckCircle
 } from "lucide-react";
 import UpdateBooking from "../components/update-booking";
 import DeleteBooking from "../components/delete-booking";
@@ -102,6 +104,7 @@ const kitDeliveryStatusMap: Record<string, string> = {
 };
 
 export default function BookingList() {
+  const navigate = useNavigate();
   const [requests, setRequests] = useState<ExRequestResponse[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [sampleMethods, setSampleMethods] = useState<SampleMethod[]>([]);
@@ -113,6 +116,7 @@ export default function BookingList() {
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [kitDeliveries, setKitDeliveries] = useState<Record<number, KitDelivery>>({});
+  const [successfulPaymentRequestIds, setSuccessfulPaymentRequestIds] = useState<number[]>([]);
 
   useEffect(() => {
     async function fetchData() {
@@ -142,6 +146,8 @@ export default function BookingList() {
         ]);
         setServices(serviceList);
         setSampleMethods(sampleMethodList);
+        
+        setSuccessfulPaymentRequestIds([]);
         
         // Lấy thông tin kit delivery cho các request có methodId = 2
         const deliveryRequests = items.filter(req => req.sampleMethodId === 2);
@@ -398,6 +404,27 @@ export default function BookingList() {
                                 <Trash2Icon size={14} className="mr-1" />
                                 Xóa
                               </Button>
+                            </div>
+                          )}
+                          {req.statusId === "2" && !successfulPaymentRequestIds.includes(req.id) && (
+                            <div className="flex items-center gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="default" 
+                                className="text-xs px-3 py-1 bg-green-600 hover:bg-green-700 text-white"
+                                onClick={() => navigate(`/payment?requestId=${req.id}`)}
+                              >
+                                <DollarSign size={14} className="mr-1" />
+                                Thanh toán
+                              </Button>
+                            </div>
+                          )}
+                          {req.statusId === "2" && successfulPaymentRequestIds.includes(req.id) && (
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-green-100 text-green-800 border-green-200">
+                                <CheckCircle size={14} className="mr-1" />
+                                Đã thanh toán
+                              </Badge>
                             </div>
                           )}
                         </div>

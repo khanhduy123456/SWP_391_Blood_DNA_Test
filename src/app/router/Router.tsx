@@ -25,6 +25,8 @@ import { BookingPage } from '@/pages/customer/page/booking';
 import Profile from '@/pages/customer/page/profile';
 import BookingList from '@/pages/customer/page/booking-list';
 import ResultCus from '@/pages/customer/page/resultCus';
+import VNPayPayment from '@/pages/payment/vnpayPayment';
+import PaymentReturn from '@/pages/payment/PaymentReturn';
 import DNAKhaiSinhPage from '@/pages/services/priceservice/khaisinh';
 import ServiceManager from '@/pages/staff/page/serviceManager';
 import BookingAssign from '@/pages/staff/page/bookingAssign';
@@ -102,6 +104,12 @@ export const AppRouter = () => {
             <Route path="/customer/results" element={<ResultCus />} />
             <Route path="/customer/booking-modal" element={<BookingModal isOpen={true} onClose={() => {}} userId={1} />} />
           </Route>
+
+          {/* Payment Routes */}
+          <Route path="/payment" element={<VNPayPayment />} />
+          <Route path="/payment-return" element={<PaymentReturn />} />
+          {/* Proxy route để catch redirect từ backend */}
+          <Route path="/api/Payment/payment-return" element={<PaymentReturn />} />
         </Route>
 
         {/* Catch all */}

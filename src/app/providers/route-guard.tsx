@@ -20,6 +20,9 @@ const roleAccess: Record<string, UserRole[]> = {
   '/staff': ['staff'],
   '/staff/kits': ['staff'],
   '/staff/services': ['staff'],
+  '/payment': ['customer'],
+  '/payment-return': ['customer'],
+  '/api/Payment/payment-return': ['customer'],
 };
 
 const getUser = () => {
