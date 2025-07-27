@@ -6,7 +6,7 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || "https://cdel-production.up
 
 const axiosServices = axios.create({
   baseURL,
-  timeout: 50000,
+  timeout: 120000, // Tăng lên 2 phút
 });
 
 axiosServices.interceptors.request.use(
@@ -33,7 +33,7 @@ axiosServices.interceptors.response.use(
 
 const axiosUpload = axios.create({
   baseURL,
-  timeout: 50000,
+  timeout: 120000, // Tăng lên 2 phút
 });
 
 axiosUpload.interceptors.request.use(

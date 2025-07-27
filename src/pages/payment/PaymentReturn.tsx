@@ -111,7 +111,7 @@ const PaymentReturn: React.FC = () => {
 
   const getStatusInfo = (status: string) => {
     switch (status) {
-      case 'success':
+      case 'Success':
         return {
           icon: <CheckCircle className="h-12 w-12 text-green-600" />,
           title: 'Thanh toán thành công!',

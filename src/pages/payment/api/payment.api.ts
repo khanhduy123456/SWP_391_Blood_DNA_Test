@@ -48,45 +48,60 @@ export interface PagedPaymentResponse {
 
 // ==== API CALLS ====
 
-// ✅ Tạo thanh toán VNPay
+// ✅ Tạo thanh toán VNPay với retry mechanism
 export const createPayment = async (
   payload: CreatePaymentPayload
 ): Promise<{ paymentUrl: string }> => {
-  try {
-    console.log('Calling createPayment with payload:', payload);
-    console.log('Endpoint:', ENDPOINT.CREATE_PAYMENT);
-    
-    // Tăng timeout cho payment API
-    const res = await axiosClient.post(ENDPOINT.CREATE_PAYMENT, payload, {
-      timeout: 30000, // 30 giây
-    });
-    console.log('Payment API response:', res);
-    console.log('Payment API data:', res.data);
-    
-    return res.data;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (error: any) {
-    console.error("Lỗi khi tạo thanh toán:", error);
-    console.error("Error response:", error.response);
-    console.error("Error message:", error.message);
-    console.error("Error status:", error.response?.status);
-    console.error("Error code:", error.code);
-    
-    // Xử lý các loại lỗi cụ thể
-    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-      throw new Error("Server đang bận, vui lòng thử lại sau.");
+  const maxRetries = 3;
+  const timeout = 120000; // 2 phút
+  let attempts = 0;
+
+  while (attempts < maxRetries) {
+    try {
+      console.log(`Calling createPayment with payload (attempt ${attempts + 1}/${maxRetries}):`, payload);
+      console.log('Endpoint:', ENDPOINT.CREATE_PAYMENT);
+      
+      const res = await axiosClient.post(ENDPOINT.CREATE_PAYMENT, payload, {
+        timeout,
+      });
+      console.log('Payment API response:', res);
+      console.log('Payment API data:', res.data);
+      
+      return res.data;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      attempts++;
+      console.error(`Payment attempt ${attempts} failed:`, error);
+      console.error("Error response:", error.response);
+      console.error("Error message:", error.message);
+      console.error("Error status:", error.response?.status);
+      console.error("Error code:", error.code);
+      
+      // Nếu đã thử hết số lần, throw error
+      if (attempts >= maxRetries) {
+        // Xử lý các loại lỗi cụ thể
+        if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+          throw new Error("Server đang xử lý thanh toán, vui lòng chờ thêm 2-3 phút và thử lại.");
+        }
+        
+        if (error.response?.status === 504) {
+          throw new Error("Server đang bị quá tải, vui lòng thử lại sau 3-5 phút.");
+        }
+        
+        if (error.response?.status === 404) {
+          throw new Error("API thanh toán chưa được implement. Vui lòng liên hệ admin.");
+        }
+        
+        throw new Error("Không thể khởi tạo thanh toán sau nhiều lần thử.");
+      }
+      
+      // Nếu chưa hết số lần thử, chờ một chút rồi thử lại
+      console.log(`Retrying payment in ${attempts * 2} seconds...`);
+      await new Promise(resolve => setTimeout(resolve, attempts * 2000)); // Tăng delay theo số lần thử
     }
-    
-    if (error.response?.status === 504) {
-      throw new Error("Server đang bị quá tải, vui lòng thử lại sau.");
-    }
-    
-    if (error.response?.status === 404) {
-      throw new Error("API thanh toán chưa được implement. Vui lòng liên hệ admin.");
-    }
-    
-    throw new Error("Không thể khởi tạo thanh toán.");
   }
+  
+  throw new Error("Không thể khởi tạo thanh toán sau nhiều lần thử.");
 };
 
 // ✅ Xử lý callback từ VNPay - Gọi API BE để xác nhận và lưu payment

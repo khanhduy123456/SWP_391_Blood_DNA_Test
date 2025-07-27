@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { getPaymentsByUserId } from "../api/payment.api";
-import type { PaymentResponse, PagedPaymentResponse } from "../api/payment.api";
+import { getPaymentsByUserId, getPaymentDetail } from "../api/payment.api";
+import type { PaymentResponse, PagedPaymentResponse, PaymentDetail } from "../api/payment.api";
 import { getExRequestsByAccountId } from "../api/exRequest.api";
 import type { ExRequestResponse } from "../types/exRequestPaged";
 import { getAllService } from "@/pages/staff/api/service.api";
@@ -9,6 +9,7 @@ import type { Service } from "@/pages/staff/type/service";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { 
   CreditCard, 
   Calendar, 
@@ -21,7 +22,8 @@ import {
   TrendingUp,
   AlertCircle,
   Package,
-  DollarSign
+  DollarSign,
+  Eye
 } from "lucide-react";
 
 function parseJwt(token: string) {
@@ -54,9 +56,8 @@ const getPaymentStatusBadge = (status: string | undefined) => {
   
   const statusConfig = {
     "Pending": { color: "bg-yellow-100 text-yellow-800 border-yellow-200", text: "Chờ xử lý" },
-    "Completed": { color: "bg-green-100 text-green-800 border-green-200", text: "Hoàn thành" },
+    "Success": { color: "bg-green-100 text-green-800 border-green-200", text: "Thành công" },
     "Failed": { color: "bg-red-100 text-red-800 border-red-200", text: "Thất bại" },
-    "Cancelled": { color: "bg-gray-100 text-gray-800 border-gray-200", text: "Đã hủy" },
   };
   
   const config = statusConfig[status as keyof typeof statusConfig] || { 
@@ -66,7 +67,7 @@ const getPaymentStatusBadge = (status: string | undefined) => {
   
   return (
     <Badge className={`${config.color} border font-medium`}>
-      {status === "Completed" ? (
+      {status === "Success" ? (
         <CheckCircle className="inline mr-1" size={14} />
       ) : status === "Failed" ? (
         <XCircle className="inline mr-1" size={14} />
@@ -107,6 +108,9 @@ export default function PaymentList() {
   const [totalItems, setTotalItems] = useState(0);
   const [specificRequest, setSpecificRequest] = useState<ExRequestResponse | null>(null);
   const [services, setServices] = useState<Service[]>([]);
+  const [selectedPaymentDetail, setSelectedPaymentDetail] = useState<PaymentDetail | null>(null);
+  const [showPaymentDetail, setShowPaymentDetail] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -158,7 +162,7 @@ export default function PaymentList() {
   }, [pageNumber, searchParams]);
 
   const totalAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
-  const completedPayments = payments.filter(payment => payment.status === "Completed").length;
+  const completedPayments = payments.filter(payment => payment.statusId === "Success").length;
 
   // Helper function để lấy thông tin service
   const getService = (serviceId: number) => {
@@ -169,6 +173,30 @@ export default function PaymentList() {
   const handlePayment = (requestId: number) => {
     navigate(`/payment?requestId=${requestId}`);
   };
+
+  // Hàm xem chi tiết payment
+  const handleViewPaymentDetail = async (paymentId: number) => {
+    setDetailLoading(true);
+    try {
+      const detail = await getPaymentDetail(paymentId);
+      setSelectedPaymentDetail(detail);
+      setShowPaymentDetail(true);
+    } catch (error) {
+      console.error("Lỗi khi lấy chi tiết payment:", error);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  // Hàm xử lý khi dialog đóng
+  const handleDialogChange = (open: boolean) => {
+    setShowPaymentDetail(open);
+    if (!open) {
+      setSelectedPaymentDetail(null);
+    }
+  };
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -343,10 +371,20 @@ export default function PaymentList() {
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-2">
-                        {getPaymentStatusBadge(payment.status || 'Unknown')}
+                        {getPaymentStatusBadge(payment.statusId || 'Unknown')}
                         <div className="text-xs text-gray-500">
                           Cập nhật: {payment.updateAt ? new Date(payment.updateAt).toLocaleString("vi-VN") : 'Không xác định'}
                         </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleViewPaymentDetail(payment.id)}
+                          disabled={detailLoading}
+                          className="mt-2"
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          Xem chi tiết
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
@@ -507,6 +545,87 @@ export default function PaymentList() {
             </CardContent>
           </Card>
         )}
+
+        {/* Dialog chi tiết payment */}
+        <Dialog open={showPaymentDetail} onOpenChange={handleDialogChange}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold text-gray-900">
+                Chi tiết thanh toán #{selectedPaymentDetail?.paymentId}
+              </DialogTitle>
+            </DialogHeader>
+
+            {selectedPaymentDetail && (
+              <div className="space-y-6">
+                {/* Thông tin cơ bản */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Mã thanh toán</p>
+                    <p className="font-semibold text-lg">{selectedPaymentDetail.paymentId}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Mã đơn hàng</p>
+                    <p className="font-semibold text-lg">#{selectedPaymentDetail.requestId}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Số tiền</p>
+                    <p className="font-semibold text-lg text-green-600">
+                      {selectedPaymentDetail.amount.toLocaleString()}₫
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Trạng thái</p>
+                    <div className="mt-1">
+                      {getPaymentStatusBadge(selectedPaymentDetail.statusId)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Thông tin giao dịch */}
+                <div className="border-t pt-4">
+                  <h3 className="text-lg font-semibold mb-4">Thông tin giao dịch</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Mã giao dịch</p>
+                      <p className="font-medium">{selectedPaymentDetail.transactionNo}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Mã phản hồi</p>
+                      <p className="font-medium">{selectedPaymentDetail.responseCode}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Ngày thanh toán</p>
+                      <p className="font-medium">
+                        {new Date(selectedPaymentDetail.paymentDate).toLocaleString("vi-VN")}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Ngày tạo</p>
+                      <p className="font-medium">
+                        {new Date(selectedPaymentDetail.createdAt).toLocaleString("vi-VN")}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Thông tin dịch vụ */}
+                <div className="border-t pt-4">
+                  <h3 className="text-lg font-semibold mb-4">Thông tin dịch vụ</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-gray-600">Dịch vụ</p>
+                      <p className="font-medium">{selectedPaymentDetail.serviceName}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Phương thức lấy mẫu</p>
+                      <p className="font-medium">{selectedPaymentDetail.sampleMethodName}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

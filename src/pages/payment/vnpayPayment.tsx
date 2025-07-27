@@ -34,6 +34,7 @@ const VNPayPayment: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   // Lấy userId từ localStorage hoặc từ token
   const getUserId = () => {
     // Thử lấy từ localStorage trước
@@ -166,6 +167,7 @@ const VNPayPayment: React.FC = () => {
     setError(null);
     setPaymentUrl(null);
     setPaymentSuccess(false);
+    setRetryCount(0);
     try {
       const service = getService(request.serviceId);
       console.log('Service found:', service);
@@ -186,7 +188,22 @@ const VNPayPayment: React.FC = () => {
       console.log('Payment data:', paymentData);
       console.log('Calling createPayment API...');
       
-      const res = await createPayment(paymentData);
+      // Wrapper function để handle retry với UI feedback
+      const callPaymentAPI = async () => {
+        try {
+          return await createPayment(paymentData);
+        } catch (error: unknown) {
+          // Kiểm tra nếu có retry attempt
+          if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
+            if (error.message.includes('attempt') || error.message.includes('retry')) {
+              setRetryCount(prev => prev + 1);
+            }
+          }
+          throw error;
+        }
+      };
+      
+      const res = await callPaymentAPI();
       console.log('Payment response:', res);
       console.log('Response type:', typeof res);
       console.log('Response keys:', Object.keys(res));
@@ -206,16 +223,25 @@ const VNPayPayment: React.FC = () => {
         setPaymentUrl(paymentUrl);
         setPaymentSuccess(true);
         
-        // Thử nhiều cách redirect khác nhau
+        // Tối ưu hóa redirect với delay và loading state
         try {
-          // Cách 1: Sử dụng window.location.href
-          console.log('Attempting redirect with window.location.href...');
-          window.location.href = paymentUrl;
+          console.log('Payment URL received, preparing redirect...');
           
-          // Fallback: Nếu không redirect được, thử window.open
+          // Hiển thị thông báo thành công trước
+          setPaymentSuccess(true);
+          setPaymentUrl(paymentUrl);
+          
+          // Delay 2 giây để user thấy thông báo thành công
           setTimeout(() => {
-            if (window.location.href !== paymentUrl) {
-              console.log('Fallback: Using window.open...');
+            console.log('Redirecting to VNPay after 2 seconds...');
+            
+            // Thử redirect với window.location.href
+            try {
+              window.location.href = paymentUrl;
+            } catch (redirectError) {
+              console.error('Primary redirect failed:', redirectError);
+              
+              // Fallback: Thử window.open
               const newWindow = window.open(paymentUrl, '_blank');
               if (!newWindow) {
                 console.log('Popup blocked, trying window.location.replace...');
@@ -262,6 +288,17 @@ const VNPayPayment: React.FC = () => {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
+          {/* Thông báo về thời gian chờ */}
+          <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-blue-600" />
+              <div>
+                <p className="text-blue-800 font-medium">Lưu ý về thời gian xử lý</p>
+                <p className="text-blue-700 text-sm">Quá trình tạo link thanh toán có thể mất 2-3 phút. Hệ thống sẽ tự động thử lại tối đa 3 lần nếu cần. Vui lòng không đóng trang hoặc refresh trong khi đang xử lý.</p>
+              </div>
+            </div>
+          </div>
+          
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-gradient-to-r from-green-600 to-blue-600 rounded-lg">
@@ -307,7 +344,15 @@ const VNPayPayment: React.FC = () => {
             <CardContent className="p-16">
               <div className="flex flex-col items-center gap-4">
                 <Loader2 className="h-16 w-16 animate-spin text-blue-600" />
-                <p className="text-blue-600 font-medium text-lg">Đang tải thông tin thanh toán...</p>
+                <p className="text-blue-600 font-medium text-lg">Đang xử lý thanh toán...</p>
+                <div className="text-center">
+                  <p className="text-sm text-gray-600 mb-2">Vui lòng chờ trong 2-3 phút</p>
+                  <p className="text-xs text-gray-500">Hệ thống đang tạo link thanh toán VNPay</p>
+                  {retryCount > 0 && (
+                    <p className="text-xs text-orange-500 mt-1">Đang thử lại lần {retryCount}/3</p>
+                  )}
+                  <p className="text-xs text-gray-400 mt-1">Có thể thử lại tối đa 3 lần nếu cần</p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -322,15 +367,21 @@ const VNPayPayment: React.FC = () => {
                   <CheckCircle className="h-6 w-6 text-green-600" />
                   <p className="text-green-700 font-medium">Đã tạo link thanh toán thành công!</p>
                 </div>
-                <div className="flex flex-col gap-2">
-                  <p className="text-sm text-gray-600">Đang chuyển hướng đến VNPay... Nếu không tự động chuyển hướng, vui lòng click nút bên dưới:</p>
-                  <Button
-                    onClick={() => window.open(paymentUrl, '_blank')}
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Thanh toán VNPay
-                  </Button>
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-green-600" />
+                    <p className="text-sm text-green-700">Đang chuyển hướng đến VNPay trong 2 giây...</p>
+                  </div>
+                  <div className="bg-white p-3 rounded-lg border border-green-200">
+                    <p className="text-sm text-gray-600 mb-2">Nếu không tự động chuyển hướng, vui lòng click nút bên dưới:</p>
+                    <Button
+                      onClick={() => window.open(paymentUrl, '_blank')}
+                      className="bg-green-600 hover:bg-green-700 text-white w-full"
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Thanh toán VNPay
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -355,6 +406,28 @@ const VNPayPayment: React.FC = () => {
                     >
                       <CreditCard className="h-4 w-4 mr-2" />
                       Thanh toán VNPay
+                    </Button>
+                  </div>
+                )}
+                {!paymentUrl && (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-sm text-gray-600">Nếu vẫn gặp lỗi, vui lòng thử lại sau vài phút:</p>
+                    <Button
+                      onClick={() => handlePayment(requests[0])}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Đang thử lại...
+                        </>
+                      ) : (
+                        <>
+                          <AlertCircle className="h-4 w-4 mr-2" />
+                          Thử lại
+                        </>
+                      )}
                     </Button>
                   </div>
                 )}
@@ -441,7 +514,7 @@ const VNPayPayment: React.FC = () => {
                             {loading ? (
                               <>
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Đang xử lý...
+                                Đang xử lý (2-3 phút)...
                               </>
                             ) : (
                               <>

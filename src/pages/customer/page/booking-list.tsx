@@ -28,13 +28,14 @@ import {
   Edit3,
   Eye,
   CheckCircle,
-  CreditCard
+  CreditCard,
+  Info
 } from "lucide-react";
 import UpdateBooking from "../components/update-booking";
 import DeleteBooking from "../components/delete-booking";
 import { Toaster } from "react-hot-toast";
 import { getKitDeliveryByRequestId, acknowledgeKitDeliveryStatus, type KitDelivery } from "@/pages/staff/api/delivery.api";
-import { getPaymentsByUserId } from "../api/payment.api";
+import { getPaymentsByUserId, type PaymentResponse } from "../api/payment.api";
 import toast from "react-hot-toast";
 
 function parseJwt(token: string) {
@@ -120,6 +121,7 @@ export default function BookingList() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [kitDeliveries, setKitDeliveries] = useState<Record<number, KitDelivery>>({});
   const [successfulPaymentRequestIds, setSuccessfulPaymentRequestIds] = useState<number[]>([]);
+  const [paymentDetails, setPaymentDetails] = useState<Record<number, PaymentResponse>>({});
 
   useEffect(() => {
     async function fetchData() {
@@ -154,12 +156,22 @@ export default function BookingList() {
         try {
           const paymentsData = await getPaymentsByUserId(Number(userId), 1, 1000); // Lấy tất cả payments
           const successfulIds = paymentsData.items
-            ?.filter(payment => payment.status === "Success" || payment.status === "Completed")
+            ?.filter(payment => payment.statusId === "Success" || payment.statusId === "Completed")
             ?.map(payment => payment.requestId) || [];
           setSuccessfulPaymentRequestIds(successfulIds);
+          
+          // Lưu thông tin chi tiết payment
+          const paymentMap: Record<number, PaymentResponse> = {};
+          paymentsData.items?.forEach(payment => {
+            if (payment.statusId === "Success" || payment.statusId === "Completed") {
+              paymentMap[payment.requestId] = payment;
+            }
+          });
+          setPaymentDetails(paymentMap);
         } catch (error) {
           console.log("Không có payments hoặc lỗi khi tải payments:", error);
           setSuccessfulPaymentRequestIds([]);
+          setPaymentDetails({});
         }
         
         // Lấy thông tin kit delivery cho các request có methodId = 2
@@ -228,12 +240,22 @@ export default function BookingList() {
         try {
           const paymentsData = await getPaymentsByUserId(Number(userId), 1, 1000);
           const successfulIds = paymentsData.items
-            ?.filter(payment => payment.status === "Success" || payment.status === "Completed")
+            ?.filter(payment => payment.statusId === "Success" || payment.statusId === "Completed")
             ?.map(payment => payment.requestId) || [];
           setSuccessfulPaymentRequestIds(successfulIds);
+          
+          // Lưu thông tin chi tiết payment
+          const paymentMap: Record<number, PaymentResponse> = {};
+          paymentsData.items?.forEach(payment => {
+            if (payment.statusId === "Success" || payment.statusId === "Completed") {
+              paymentMap[payment.requestId] = payment;
+            }
+          });
+          setPaymentDetails(paymentMap);
         } catch (error) {
           console.log("Không có payments hoặc lỗi khi tải payments:", error);
           setSuccessfulPaymentRequestIds([]);
+          setPaymentDetails({});
         }
         
         // Lấy thông tin kit delivery cho các request có methodId = 2
@@ -456,9 +478,10 @@ export default function BookingList() {
                           )}
                           {req.statusId === "2" && successfulPaymentRequestIds.includes(req.id) && (
                             <div className="flex items-center gap-2">
-                              <Badge className="bg-green-100 text-green-800 border-green-200">
+                              <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 font-medium cursor-help shadow-sm hover:shadow-md transition-shadow" title="Thanh toán đã được xác nhận thành công">
                                 <CheckCircle size={14} className="mr-1" />
                                 Đã thanh toán
+                                <Info size={12} className="ml-1 opacity-70" />
                               </Badge>
                             </div>
                           )}
@@ -581,6 +604,38 @@ export default function BookingList() {
                                       ) : (
                                         <p className="text-sm text-gray-500">Chưa có thông tin vận chuyển</p>
                                       )}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {/* Thông tin thanh toán */}
+                                {successfulPaymentRequestIds.includes(req.id) && paymentDetails[req.id] && (
+                                  <div className="flex items-start gap-3">
+                                    <CreditCard className="h-5 w-5 text-emerald-600 mt-0.5" />
+                                    <div className="flex-1">
+                                      <p className="font-medium text-gray-900">Thông tin thanh toán</p>
+                                      <div className="mt-2 space-y-3">
+                                        <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 font-medium">
+                                          <CheckCircle size={14} className="mr-1" />
+                                          Đã thanh toán thành công
+                                        </Badge>
+                                        <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-200">
+                                          <div className="text-sm text-gray-700 space-y-2">
+                                            <div className="flex justify-between items-center">
+                                              <span className="font-medium">Số tiền:</span>
+                                              <span className="font-semibold text-emerald-700">{paymentDetails[req.id].amount.toLocaleString()}₫</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                              <span className="font-medium">Phương thức:</span>
+                                              <span className="text-emerald-700">{paymentDetails[req.id].paymentMethod}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                              <span className="font-medium">Ngày thanh toán:</span>
+                                              <span className="text-emerald-700">{new Date(paymentDetails[req.id].createAt).toLocaleString("vi-VN")}</span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
                                 )}

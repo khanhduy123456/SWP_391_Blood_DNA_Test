@@ -5,9 +5,24 @@ export interface PaymentResponse {
   requestId: number;
   amount: number;
   paymentMethod: string;
-  status: string;
+  statusId: string;
   createAt: string;
   updateAt: string;
+}
+
+// Thêm interface cho payment detail
+export interface PaymentDetail {
+  paymentId: number;
+  requestId: number;
+  amount: number;
+  statusId: string;
+  transactionNo: string;
+  responseCode: string;
+  paymentDate: string;
+  createdAt: string;
+  updatedAt: string;
+  serviceName: string;
+  sampleMethodName: string;
 }
 
 export interface PagedPaymentResponse {
@@ -65,5 +80,39 @@ export const getPaymentsByUserId = async (
     
     // Nếu lỗi khác, throw error để component xử lý
     throw new Error("Không thể tải lịch sử thanh toán. Vui lòng thử lại sau.");
+  }
+};
+
+// Thêm API để lấy chi tiết payment
+export const getPaymentDetail = async (
+  paymentId: number
+): Promise<PaymentDetail> => {
+  try {
+    console.log(`Calling Payment Detail API for payment ${paymentId}`);
+    
+    const response = await axiosClient.get(
+      `/Payment/details/${paymentId}`,
+      {
+        timeout: 10000, // 10 giây timeout
+      }
+    );
+    
+    console.log('Payment Detail API response:', response.data);
+    return response.data;
+  } catch (error: unknown) {
+    console.error("Lỗi khi lấy chi tiết payment:", error);
+    
+    // Kiểm tra nếu là AxiosError
+    if (error && typeof error === 'object' && 'response' in error) {
+      const axiosError = error as { response?: { status?: number; data?: { message?: string } } };
+      console.error("Error status:", axiosError.response?.status);
+      console.error("Error message:", axiosError.response?.data);
+      
+      if (axiosError.response?.status === 404) {
+        throw new Error("Không tìm thấy thông tin thanh toán.");
+      }
+    }
+    
+    throw new Error("Không thể lấy thông tin chi tiết thanh toán. Vui lòng thử lại sau.");
   }
 }; 
