@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { createPayment } from './api/payment.api';
+import { Toaster } from 'react-hot-toast';
 import { getAllService } from '@/pages/staff/api/service.api';
 import type { Service } from '@/pages/staff/type/service';
 import { getExRequestsByAccountId } from '@/pages/customer/api/exRequest.api';
@@ -117,7 +118,20 @@ const VNPayPayment: React.FC = () => {
 
   useEffect(() => {
     fetchRequests();
-  }, [fetchRequests]);
+    
+    // Kiểm tra xem có phải user vừa quay lại từ VNPay không
+    const vnp_ResponseCode = searchParams.get('vnp_ResponseCode');
+    const vnp_TransactionStatus = searchParams.get('vnp_TransactionStatus');
+    
+    // Nếu có payment return params, redirect về trang payment return
+    if (vnp_ResponseCode || vnp_TransactionStatus) {
+      const queryString = window.location.search;
+      const paymentReturnUrl = `/payment-return${queryString}`;
+      console.log('Redirecting to payment return:', paymentReturnUrl);
+      navigate(paymentReturnUrl);
+      return;
+    }
+  }, [fetchRequests, searchParams, navigate]);
 
   // Helper function để lấy thông tin service
   const getService = (serviceId: number) => {
@@ -351,6 +365,30 @@ const VNPayPayment: React.FC = () => {
           </div>
         )}
       </div>
+      
+      {/* Toast Container */}
+      <Toaster 
+        position="bottom-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+          success: {
+            duration: 4000,
+            style: {
+              background: '#10b981',
+            },
+          },
+          error: {
+            duration: 4000,
+            style: {
+              background: '#ef4444',
+            },
+          },
+        }}
+      />
     </div>
   );
 };

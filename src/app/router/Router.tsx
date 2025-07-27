@@ -24,9 +24,11 @@ import CusLayout from '@/pages/customer/cusLayout';
 import { BookingPage } from '@/pages/customer/page/booking';
 import Profile from '@/pages/customer/page/profile';
 import BookingList from '@/pages/customer/page/booking-list';
+import PaymentList from '@/pages/customer/page/payment-list';
 import ResultCus from '@/pages/customer/page/resultCus';
 import VNPayPayment from '@/pages/payment/vnpayPayment';
 import PaymentReturn from '@/pages/payment/PaymentReturn';
+import PaymentRedirect from '@/pages/payment/PaymentRedirect';
 import DNAKhaiSinhPage from '@/pages/services/priceservice/khaisinh';
 import ServiceManager from '@/pages/staff/page/serviceManager';
 import BookingAssign from '@/pages/staff/page/bookingAssign';
@@ -100,6 +102,7 @@ export const AppRouter = () => {
             <Route path="/customer/kits" element={<KitManagement />} />
             <Route path="/customer/booking-page" element={<BookingPage />} />
             <Route path="/customer/booking-list" element={<BookingList />} />
+            <Route path="/customer/payment-list" element={<PaymentList />} />
             <Route path="/customer/profile" element={<Profile />} />
             <Route path="/customer/results" element={<ResultCus />} />
             <Route path="/customer/booking-modal" element={<BookingModal isOpen={true} onClose={() => {}} userId={1} />} />
@@ -109,7 +112,7 @@ export const AppRouter = () => {
           <Route path="/payment" element={<VNPayPayment />} />
           <Route path="/payment-return" element={<PaymentReturn />} />
           {/* Proxy route để catch redirect từ backend */}
-          <Route path="/api/Payment/payment-return" element={<PaymentReturn />} />
+          <Route path="/api/Payment/payment-return" element={<PaymentRedirect />} />
         </Route>
 
         {/* Catch all */}

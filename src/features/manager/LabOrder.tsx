@@ -45,7 +45,8 @@ import {
   FileText,
   Eye,
   UserCheck,
-  AlertTriangle
+  AlertTriangle,
+  RefreshCw
 } from "lucide-react";
 import * as React from "react";
 import toast, { Toaster } from "react-hot-toast";
@@ -68,26 +69,40 @@ type LabOrder = {
 };
 
 // Ánh xạ dữ liệu từ API sang LabOrder
-const mapRequestToLabOrder = (request: Request): LabOrder => ({
-  id: request.id.toString(),
-  customerName: request.userName,
-  serviceType: request.serviceName,
-  sampleMethod: request.sampleMethodName,
-  status:
-    request.statusId === "1"
-      ? "New"
-      : request.statusId === "2"
-      ? "Processed"
-      : request.statusId === "6"
-      ? "Rejected"
-      : request.staffId !== 0
-      ? "Assigned"
-      : "Processed",
-  assignedStaff: request.staffId !== 0 ? request.staffName : undefined,
-  assignedStaffId: request.staffId !== 0 ? request.staffId : undefined,
-  createdAt: request.createAt,
-  updatedAt: request.updateAt,
-});
+const mapRequestToLabOrder = (request: Request): LabOrder => {
+  console.log('Mapping request:', {
+    id: request.id,
+    statusId: request.statusId,
+    staffId: request.staffId,
+    staffName: request.staffName
+  });
+  
+  let status: "New" | "Processed" | "Assigned" | "Rejected";
+  
+  if (request.statusId === "1") {
+    status = "New";
+  } else if (request.statusId === "6") {
+    status = "Rejected";
+  } else if (request.statusId === "2" && request.staffId !== 0) {
+    status = "Assigned";
+  } else if (request.statusId === "2") {
+    status = "Processed";
+  } else {
+    status = "Processed"; // fallback
+  }
+  
+  return {
+    id: request.id.toString(),
+    customerName: request.userName,
+    serviceType: request.serviceName,
+    sampleMethod: request.sampleMethodName,
+    status,
+    assignedStaff: request.staffId !== 0 ? request.staffName : undefined,
+    assignedStaffId: request.staffId !== 0 ? request.staffId : undefined,
+    createdAt: request.createAt,
+    updatedAt: request.updateAt,
+  };
+};
 
 const LabOrderManagement: React.FC = () => {
   const [activeTab, setActiveTab] = React.useState<"New" | "Processed" | "Assigned" | "Rejected">("New");
@@ -116,6 +131,10 @@ const LabOrderManagement: React.FC = () => {
           getStaffList(),
           getAllRequests(),
         ]);
+        
+        console.log('Staff data:', staffData);
+        console.log('Request data:', requestData);
+        
         setStaffList(staffData);
         setRequests(requestData); // Lưu dữ liệu gốc
         setOrders(requestData.map(mapRequestToLabOrder));
@@ -279,51 +298,47 @@ const LabOrderManagement: React.FC = () => {
     }
   };
 
+  // Refresh data từ API
+  const refreshData = async () => {
+    try {
+      const [staffData, requestData] = await Promise.all([
+        getStaffList(),
+        getAllRequests(),
+      ]);
+      
+      console.log('Refreshed staff data:', staffData);
+      console.log('Refreshed request data:', requestData);
+      
+      setStaffList(staffData);
+      setRequests(requestData);
+      setOrders(requestData.map(mapRequestToLabOrder));
+    } catch (error) {
+      console.error("Lỗi khi refresh data:", error);
+    }
+  };
+
   // Giao nhân viên
   const assignStaff = async (orderId: string, staff: Staff) => {
     try {
       setIsLoading(true);
       
+      console.log(`Đang phân công staff ID: ${staff.id} cho request ID: ${orderId}`);
+      
       // Gọi API để phân công staff
       const response = await assignStaffToExRequest(parseInt(orderId), staff.id);
       
-      // Cập nhật state local
-      setOrders((prev) =>
-        prev.map((order) =>
-          order.id === orderId
-            ? {
-                ...order,
-                assignedStaff: response.assignedStaff.staffName,
-                assignedStaffId: response.assignedStaff.staffId,
-                status: "Assigned",
-                updatedAt: new Date(response.updatedAt).toISOString().split("T")[0],
-              }
-            : order
-        )
-      );
+      console.log('Response từ API phân công:', response);
       
-      setRequests((prevRequests) =>
-        prevRequests.map((request) =>
-          request.id.toString() === orderId
-            ? {
-                ...request,
-                staffId: response.assignedStaff.staffId,
-                staffName: response.assignedStaff.staffName,
-                statusId: "2",
-                statusName: "Accepted",
-                updateAt: response.updatedAt,
-              }
-            : request
-        )
-      );
+      // Refresh data từ API thay vì cập nhật local
+      await refreshData();
       
-      toast.success(`Đã phân công nhân viên ${response.assignedStaff.staffName} cho đơn ID: ${orderId}`, { 
+      toast.success(`✅ Đã phân công nhân viên ${response.assignedStaff.staffName} cho đơn ID: ${orderId}`, { 
         position: "top-right", 
         duration: 3000 
       });
     } catch (error) {
       console.error("Lỗi khi phân công nhân viên:", error);
-      toast.error("Lỗi khi phân công nhân viên. Vui lòng thử lại.", { 
+      toast.error("❌ Lỗi khi phân công nhân viên. Vui lòng thử lại.", { 
         position: "top-right", 
         duration: 4000 
       });
@@ -387,23 +402,50 @@ const LabOrderManagement: React.FC = () => {
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="default" className="w-[120px] px-3 h-8 text-sm bg-purple-600 hover:bg-purple-700">
+            <Button 
+              variant="default" 
+              className="w-[120px] px-3 h-8 text-sm bg-purple-600 hover:bg-purple-700"
+              disabled={isLoading}
+            >
               <Users className="h-4 w-4 mr-1" />
-              Phân công <ChevronDown className="ml-1 h-4 w-4" />
+              {isLoading ? "Đang xử lý..." : "Phân công"} <ChevronDown className="ml-1 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            {staffList.map((staff) => (
-              <DropdownMenuItem
-                key={staff.id}
-                onClick={() => assignStaff(order.id, staff)}
-                className="flex items-center gap-2"
-              >
-                <UserCheck className="h-4 w-4" />
-                <span className="font-mono text-xs text-gray-500">#{staff.id}</span>
-                <span>{staff.fullName || staff.email}</span>
-              </DropdownMenuItem>
-            ))}
+          <DropdownMenuContent className="w-64">
+            <div className="px-2 py-1.5 text-sm font-medium text-gray-700 border-b border-gray-200 mb-1">
+              Chọn nhân viên phân công:
+            </div>
+            {staffList.length > 0 ? (
+              staffList.map((staff) => (
+                <DropdownMenuItem
+                  key={staff.id}
+                  onClick={() => assignStaff(order.id, staff)}
+                  className="flex items-center gap-3 p-2 hover:bg-purple-50 cursor-pointer"
+                  disabled={isLoading}
+                >
+                  <div className="flex items-center justify-center w-8 h-8 bg-purple-100 rounded-full">
+                    <UserCheck className="h-4 w-4 text-purple-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                        #{staff.id}
+                      </span>
+                      <span className="font-medium text-gray-900 truncate">
+                        {staff.fullName || staff.email}
+                      </span>
+                    </div>
+                    {staff.email && staff.fullName && (
+                      <div className="text-xs text-gray-500 truncate">{staff.email}</div>
+                    )}
+                  </div>
+                </DropdownMenuItem>
+              ))
+            ) : (
+              <div className="px-2 py-3 text-sm text-gray-500 text-center">
+                Không có nhân viên nào
+              </div>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       );
@@ -444,16 +486,27 @@ const LabOrderManagement: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg">
-              <Dna className="h-8 w-8 text-white" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg">
+                <Dna className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  QUẢN LÝ ĐƠN XÉT NGHIỆM ADN
+                </h1>
+                <p className="text-gray-600 text-sm">Hệ thống quản lý xét nghiệm huyết thống ADN</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                QUẢN LÝ ĐƠN XÉT NGHIỆM ADN
-              </h1>
-              <p className="text-gray-600 text-sm">Hệ thống quản lý xét nghiệm huyết thống ADN</p>
-            </div>
+            <Button
+              variant="outline"
+              onClick={refreshData}
+              disabled={isLoading}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              Làm mới
+            </Button>
           </div>
         </div>
 
@@ -621,8 +674,15 @@ const LabOrderManagement: React.FC = () => {
                             <StatusButton order={order} />
                           ) : activeTab === "Assigned" ? (
                             <div className="flex items-center gap-2">
-                              <UserCheck className="h-4 w-4 text-green-600" />
-                              <span className="text-sm font-medium">{order.assignedStaff || "Chưa phân công"}</span>
+                              <div className="flex items-center justify-center w-6 h-6 bg-green-100 rounded-full">
+                                <UserCheck className="h-3 w-3 text-green-600" />
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-sm font-medium text-green-700">{order.assignedStaff || "Chưa phân công"}</span>
+                                {order.assignedStaffId && (
+                                  <span className="text-xs text-gray-500">ID: #{order.assignedStaffId}</span>
+                                )}
+                              </div>
                             </div>
                           ) : (
                             <div className="flex items-center gap-2">

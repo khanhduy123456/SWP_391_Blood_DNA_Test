@@ -27,12 +27,14 @@ import {
   FileText,
   Edit3,
   Eye,
-  CheckCircle
+  CheckCircle,
+  CreditCard
 } from "lucide-react";
 import UpdateBooking from "../components/update-booking";
 import DeleteBooking from "../components/delete-booking";
 import { Toaster } from "react-hot-toast";
 import { getKitDeliveryByRequestId, acknowledgeKitDeliveryStatus, type KitDelivery } from "@/pages/staff/api/delivery.api";
+import { getPaymentsByUserId } from "../api/payment.api";
 import toast from "react-hot-toast";
 
 function parseJwt(token: string) {
@@ -69,6 +71,7 @@ const getStatusBadge = (statusId: string) => {
     "3": { color: "bg-blue-100 text-blue-800 border-blue-200", text: "Đã thu mẫu" },
     "4": { color: "bg-purple-100 text-purple-800 border-purple-200", text: "Đang xử lý" },
     "5": { color: "bg-emerald-100 text-emerald-800 border-emerald-200", text: "Hoàn thành" },
+    "6": { color: "bg-red-100 text-red-800 border-red-200", text: "Đã từ chối" },
   };
   
   const config = statusConfig[statusId as keyof typeof statusConfig] || { 
@@ -147,7 +150,17 @@ export default function BookingList() {
         setServices(serviceList);
         setSampleMethods(sampleMethodList);
         
-        setSuccessfulPaymentRequestIds([]);
+        // Lấy danh sách payments của user
+        try {
+          const paymentsData = await getPaymentsByUserId(Number(userId), 1, 1000); // Lấy tất cả payments
+          const successfulIds = paymentsData.items
+            ?.filter(payment => payment.status === "Success" || payment.status === "Completed")
+            ?.map(payment => payment.requestId) || [];
+          setSuccessfulPaymentRequestIds(successfulIds);
+        } catch (error) {
+          console.log("Không có payments hoặc lỗi khi tải payments:", error);
+          setSuccessfulPaymentRequestIds([]);
+        }
         
         // Lấy thông tin kit delivery cho các request có methodId = 2
         const deliveryRequests = items.filter(req => req.sampleMethodId === 2);
@@ -211,6 +224,18 @@ export default function BookingList() {
         setRequests(items);
         setTotalPages(data.totalPages || 1);
         
+        // Lấy lại danh sách payments của user
+        try {
+          const paymentsData = await getPaymentsByUserId(Number(userId), 1, 1000);
+          const successfulIds = paymentsData.items
+            ?.filter(payment => payment.status === "Success" || payment.status === "Completed")
+            ?.map(payment => payment.requestId) || [];
+          setSuccessfulPaymentRequestIds(successfulIds);
+        } catch (error) {
+          console.log("Không có payments hoặc lỗi khi tải payments:", error);
+          setSuccessfulPaymentRequestIds([]);
+        }
+        
         // Lấy thông tin kit delivery cho các request có methodId = 2
         const deliveryRequests = items.filter(req => req.sampleMethodId === 2);
         const deliveryPromises = deliveryRequests.map(async (req) => {
@@ -243,16 +268,26 @@ export default function BookingList() {
       <div className="max-w-6xl mx-auto">
         {/* Header Section */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg">
-              <Dna className="h-8 w-8 text-white" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg">
+                <Dna className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  LỊCH SỬ XÉT NGHIỆM ADN
+                </h1>
+                <p className="text-gray-600 text-sm">Theo dõi quá trình xét nghiệm huyết thống ADN của bạn</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                LỊCH SỬ XÉT NGHIỆM ADN
-              </h1>
-              <p className="text-gray-600 text-sm">Theo dõi quá trình xét nghiệm huyết thống ADN của bạn</p>
-            </div>
+            <Button
+              variant="outline"
+              className="border-green-500 text-green-700 hover:bg-green-50"
+              onClick={() => navigate('/customer/payment-list')}
+            >
+              <CreditCard className="h-4 w-4 mr-2" />
+              Xem lịch sử thanh toán
+            </Button>
           </div>
         </div>
 
@@ -412,7 +447,7 @@ export default function BookingList() {
                                 size="sm" 
                                 variant="default" 
                                 className="text-xs px-3 py-1 bg-green-600 hover:bg-green-700 text-white"
-                                onClick={() => navigate(`/payment?requestId=${req.id}`)}
+                                onClick={() => navigate(`/customer/payment-list?requestId=${req.id}`)}
                               >
                                 <DollarSign size={14} className="mr-1" />
                                 Thanh toán

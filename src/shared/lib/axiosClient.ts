@@ -2,7 +2,7 @@ import axios from "axios";
 import type { AxiosResponse } from "axios";
 
 // Vite sử dụng import.meta.env.VITE_XXX để lấy biến môi trường (phải khai báo trong .env file)
-const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+const baseURL = import.meta.env.VITE_API_BASE_URL || "https://cdel-production.up.railway.app/api";
 
 const axiosServices = axios.create({
   baseURL,

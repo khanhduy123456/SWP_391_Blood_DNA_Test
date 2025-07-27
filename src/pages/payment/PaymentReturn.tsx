@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { handlePaymentReturn } from './api/payment.api';
+import toast, { Toaster } from 'react-hot-toast';
 import { Card, CardContent, CardHeader } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
 import { Badge } from '@/shared/ui/badge';
@@ -33,21 +34,56 @@ const PaymentReturn: React.FC = () => {
         console.log('Payment return URL:', window.location.href);
         console.log('Query string:', queryString);
 
-        // Kiểm tra nếu đang ở API URL, redirect về frontend URL
+        // Kiểm tra nếu đang ở BE domain, redirect về frontend
+        if (window.location.hostname === 'cdel-production.up.railway.app') {
+          const frontendUrl = `https://swp-391-blood-dna-test.vercel.app/payment-return${queryString}`;
+          console.log('Redirecting from BE to frontend:', frontendUrl);
+          window.location.href = frontendUrl;
+          return;
+        }
+
+        // Kiểm tra nếu đang ở frontend URL nhưng có API path (proxy route)
         if (window.location.pathname.includes('/api/Payment/payment-return')) {
           const frontendUrl = `/payment-return${queryString}`;
           console.log('Redirecting to frontend URL:', frontendUrl);
           window.history.replaceState({}, '', frontendUrl);
+          
+          // Thêm delay nhỏ để đảm bảo URL đã được cập nhật
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
 
-        // Gọi API để xử lý payment return (optional)
+        // Kiểm tra payment status từ URL params
+        const responseCode = searchParams.get('vnp_ResponseCode');
+        const transactionStatus = searchParams.get('vnp_TransactionStatus');
+        
+        console.log('Payment status from URL:', { responseCode, transactionStatus });
+
+        // Gọi API để xác nhận và lưu payment vào database
+        let apiSuccess = false;
         try {
+          console.log('Calling BE API to confirm payment...');
           const result = await handlePaymentReturn();
-          console.log('Payment return result:', result);
+          console.log('Payment confirmation result:', result);
           setPaymentResult(result);
+          apiSuccess = true;
+          
+          // Hiển thị toast thành công từ BE
+          if (result && result.message) {
+            toast.success(`✅ ${result.message}`);
+          }
         } catch (apiError) {
-          console.log('API call failed, but continuing with URL params:', apiError);
-          // Vẫn tiếp tục xử lý với URL params
+          console.error('API call failed:', apiError);
+          // Vẫn tiếp tục xử lý với URL params nếu API fail
+          toast.error('⚠️ Không thể xác nhận với server, nhưng vẫn hiển thị kết quả từ VNPay');
+        }
+
+        // Chỉ hiển thị toast từ VNPay nếu API call thất bại
+        if (!apiSuccess) {
+          if (responseCode === '00' && transactionStatus === '00') {
+            toast.success('✅ Thanh toán thành công!');
+          } else if (responseCode && responseCode !== '00') {
+            toast.error('❌ Thanh toán thất bại!');
+          }
         }
       } catch (error) {
         console.error('Error processing payment return:', error);
@@ -58,7 +94,7 @@ const PaymentReturn: React.FC = () => {
     };
 
     processPaymentReturn();
-  }, []);
+  }, [searchParams]);
 
   const getPaymentStatus = () => {
     const responseCode = searchParams.get('vnp_ResponseCode');
@@ -204,29 +240,29 @@ const PaymentReturn: React.FC = () => {
               </CardContent>
             </Card>
 
-                         {/* Payment Result from API */}
-             {paymentResult && (
-               <Card className="shadow-sm border-green-200 bg-green-50">
-                 <CardContent className="p-4">
-                   <div className="flex items-center gap-3">
-                     <CheckCircle className="h-5 w-5 text-green-600" />
-                     <div>
-                       <p className="font-medium text-green-800">{paymentResult.message}</p>
-                       <p className="text-sm text-green-600">Transaction ID: {paymentResult.transactionId}</p>
-                     </div>
-                   </div>
-                 </CardContent>
-               </Card>
-             )}
+            {/* Payment Result from API */}
+            {paymentResult && (
+              <Card className="shadow-sm border-green-200 bg-green-50">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <div>
+                      <p className="font-medium text-green-800">{paymentResult.message}</p>
+                      <p className="text-sm text-green-600">Transaction ID: {paymentResult.transactionId}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-             {/* Transaction Details */}
-             <Card className="shadow-sm">
-               <CardHeader>
-                 <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                   <FileText className="h-5 w-5" />
-                   Chi tiết giao dịch
-                 </h3>
-               </CardHeader>
+            {/* Transaction Details */}
+            <Card className="shadow-sm">
+              <CardHeader>
+                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Chi tiết giao dịch
+                </h3>
+              </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -289,6 +325,30 @@ const PaymentReturn: React.FC = () => {
           </div>
         )}
       </div>
+      
+      {/* Toast Container */}
+      <Toaster 
+        position="bottom-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+          success: {
+            duration: 4000,
+            style: {
+              background: '#10b981',
+            },
+          },
+          error: {
+            duration: 4000,
+            style: {
+              background: '#ef4444',
+            },
+          },
+        }}
+      />
     </div>
   );
 };

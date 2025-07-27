@@ -6,6 +6,7 @@ import {
   TestTubeDiagonal,
   User,
   LogOut,
+  CreditCard,
 } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -55,6 +56,12 @@ const SidebarCustomer = ({ role }: SidebarProps) => {
           name: "Lịch sử đặt lịch",
           href: "/customer/booking-list",
           icon: <CalendarDays size={size} />, 
+          position: "top",
+        },
+        {
+          name: "Lịch sử thanh toán",
+          href: "/customer/payment-list",
+          icon: <CreditCard size={size} />, 
           position: "top",
         },
         {

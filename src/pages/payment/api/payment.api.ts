@@ -70,18 +70,23 @@ export const createPayment = async (
   }
 };
 
-// ✅ Xử lý callback từ VNPay
+// ✅ Xử lý callback từ VNPay - Gọi API BE để xác nhận và lưu payment
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const handlePaymentReturn = async (): Promise<any> => {
   try {
+    console.log('Calling BE API to confirm payment with params:', window.location.search);
+    
     const res = await axiosClient.get(
       `${ENDPOINT.PAYMENT_RETURN}${window.location.search}`
     );
+    
+    console.log('BE API response:', res.data);
     return res.data;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error("Lỗi khi xử lý phản hồi VNPay:", error);
-    throw new Error("Không thể xử lý kết quả thanh toán.");
+    console.error("Error response:", error.response?.data);
+    throw new Error("Không thể xác nhận payment với server.");
   }
 };
 
