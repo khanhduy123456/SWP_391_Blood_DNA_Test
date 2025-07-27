@@ -4,7 +4,7 @@ import { Button } from '@/shared/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { Label } from '@/shared/ui/label';
 import { Input } from '@/shared/ui/input';
-import { createKitDelivery, getExRequestsByStaffId, type ExRequest, updateKitDeliveryStatus } from '../api/delivery.api';
+import { createKitDelivery, getExRequestsByStaffId, type ExRequest } from '../api/delivery.api';
 import { getAllKits } from '@/features/admin/api/kit.api';
 import type { Kit } from '@/features/admin/types/kit';
 import { getStaffIdByUserId } from '../api/staff.api';
@@ -138,22 +138,43 @@ export const CreateKitDeliveryModal: React.FC<CreateKitDeliveryModalProps> = ({
     try {
       setLoading(true);
       // Tạo kit delivery
+      console.log('Creating kit delivery with data:', {
+        requestId: typeof finalRequestId === 'string' ? parseInt(finalRequestId) : finalRequestId,
+        kitId: parseInt(selectedKitId),
+        kitType: kitType.trim(),
+      });
+      
       const created = await createKitDelivery({
         requestId: typeof finalRequestId === 'string' ? parseInt(finalRequestId) : finalRequestId,
         kitId: parseInt(selectedKitId),
         kitType: kitType.trim(),
       });
+      
+      console.log('Kit delivery created successfully:', created);
 
-      // Map trạng thái kit delivery vào (nếu cần lưu lại trạng thái ở FE)
-      // Gọi API cập nhật trạng thái kit delivery ngay sau khi tạo
-      await updateKitDeliveryStatus(created.id);
-
-      toast.success('Tạo kit delivery và cập nhật trạng thái thành công!');
+      toast.success('Tạo kit delivery thành công!');
       onSuccess();
       handleClose();
     } catch (error) {
-      console.error('Lỗi khi tạo/cập nhật kit delivery:', error);
-      toast.error('Tạo hoặc cập nhật kit delivery thất bại');
+      console.error('Lỗi khi tạo kit delivery:', error);
+      
+      // Hiển thị thông tin lỗi chi tiết hơn
+      if (error && typeof error === 'object' && 'message' in error) {
+        const errorMessage = (error as { message: string }).message;
+        if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
+          toast.error('Không có quyền truy cập. Vui lòng đăng nhập lại.');
+        } else if (errorMessage.includes('404')) {
+          toast.error('API không tồn tại. Vui lòng liên hệ admin.');
+        } else if (errorMessage.includes('500')) {
+          toast.error('Lỗi server. Vui lòng thử lại sau.');
+        } else if (errorMessage.includes('400')) {
+          toast.error('Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin.');
+        } else {
+          toast.error(`Tạo kit delivery thất bại: ${errorMessage}`);
+        }
+      } else {
+        toast.error('Tạo kit delivery thất bại');
+      }
     } finally {
       setLoading(false);
     }

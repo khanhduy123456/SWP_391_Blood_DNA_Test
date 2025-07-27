@@ -12,7 +12,8 @@ import {
   Loader2,
   Dna,
   Heart,
-  FileText
+  FileText,
+  Package
 } from 'lucide-react';
 import { Checkbox } from '@/shared/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/shared/ui/dialog';
@@ -184,31 +185,50 @@ const BookingAssign: React.FC = () => {
       setBookings(extendedBookings);
       
       // Lấy thông tin kit delivery cho các request có methodId = 2
-      const deliveryRequests = extendedBookings.filter(booking => booking.sampleMethodId === 2);
-      const deliveryPromises = deliveryRequests.map(async (booking) => {
-        try {
-          const delivery = await getKitDeliveryByRequestId(booking.id);
-          return { requestId: booking.id, delivery };
-        } catch {
-          console.log(`Không tìm thấy kit delivery cho request ${booking.id}`);
-          return { requestId: booking.id, delivery: null };
-        }
-      });
+      // Chỉ gọi API khi thực sự cần thiết (khi booking đã được chấp nhận)
+      const deliveryRequests = extendedBookings.filter(booking => 
+        booking.sampleMethodId === 2 && 
+        (booking.statusId === '2' || booking.statusId === '3' || booking.statusId === '4' || booking.statusId === '5')
+      );
       
-      const deliveryResults = await Promise.all(deliveryPromises);
-      const deliveryMap: Record<number, KitDelivery> = {};
-      deliveryResults.forEach(result => {
-        if (result.delivery) {
-          deliveryMap[result.requestId] = result.delivery;
-        }
-      });
-      setKitDeliveries(deliveryMap);
+      if (deliveryRequests.length > 0) {
+        const deliveryPromises = deliveryRequests.map(async (booking) => {
+          try {
+            const delivery = await getKitDeliveryByRequestId(booking.id);
+            return { requestId: booking.id, delivery };
+          } catch (error: unknown) {
+            // Chỉ log khi không phải lỗi 404 (Not Found)
+            if (error && typeof error === 'object' && 'response' in error) {
+              const axiosError = error as { response?: { status?: number } };
+              if (axiosError.response?.status !== 404) {
+                console.log(`Lỗi khi lấy kit delivery cho request ${booking.id}:`, error);
+              }
+            }
+            return { requestId: booking.id, delivery: null };
+          }
+        });
+        
+        const deliveryResults = await Promise.all(deliveryPromises);
+        const deliveryMap: Record<number, KitDelivery> = {};
+        deliveryResults.forEach(result => {
+          if (result.delivery) {
+            deliveryMap[result.requestId] = result.delivery;
+          }
+        });
+        setKitDeliveries(deliveryMap);
+      } else {
+        setKitDeliveries({});
+      }
       
       // Hiển thị thông báo phù hợp
       if (bookingsData.length === 0) {
         toast.success('Tải dữ liệu thành công! Hiện tại bạn chưa được phân công booking nào.');
       } else {
-        toast.success(`Tải dữ liệu thành công! Có ${bookingsData.length} booking được phân công.`);
+        const deliveryRequests = extendedBookings.filter(booking => 
+          booking.sampleMethodId === 2 && 
+          (booking.statusId === '2' || booking.statusId === '3' || booking.statusId === '4' || booking.statusId === '5')
+        );
+        toast.success(`Tải dữ liệu thành công! Có ${bookingsData.length} booking được phân công.${deliveryRequests.length > 0 ? ` Kiểm tra ${deliveryRequests.length} Kit Delivery.` : ''}`);
       }
       
     } catch (err) {
@@ -493,7 +513,9 @@ const BookingAssign: React.FC = () => {
                                    kitDeliveries[booking.id].statusId === 'Received' ? 'Đã nhận' : 'Đã trả'}
                                 </span>
                               ) : (
-                                <span className="text-gray-400">Chưa có thông tin</span>
+                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                  Chưa tạo Kit Delivery
+                                </span>
                               )}
                             </div>
                           )}
@@ -538,7 +560,9 @@ const BookingAssign: React.FC = () => {
                               Bắt đầu xử lý
                             </Button>
                           )}
-                          {booking.sampleMethodId === 2 && !kitDeliveries[booking.id] && (
+                          {booking.sampleMethodId === 2 && 
+                           (booking.statusId === '2' || booking.statusId === '3' || booking.statusId === '4' || booking.statusId === '5') &&
+                           !kitDeliveries[booking.id] && (
                             <Button 
                               size="sm"
                               className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -547,7 +571,8 @@ const BookingAssign: React.FC = () => {
                                 setIsCreateDeliveryModalOpen(true);
                               }}
                             >
-                              Tạo Delivery
+                              <Package className="w-4 h-4 mr-1" />
+                              Tạo Kit Delivery
                             </Button>
                           )}
                         </div>

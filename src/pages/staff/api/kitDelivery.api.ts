@@ -86,16 +86,31 @@ export const getPagedKitDeliveries = async (
 // Tạo kit delivery mới
 export const createKitDelivery = async (kitDeliveryData: CreateKitDeliveryRequest): Promise<KitDelivery> => {
   try {
+    console.log("Gọi API tạo KitDelivery:", kitDeliveryData);
+    console.log("Endpoint:", ENDPOINT.CREATE_KIT_DELIVERY);
+    
     const response = await axiosClient.post(ENDPOINT.CREATE_KIT_DELIVERY, kitDeliveryData, {
       headers: {
-        Accept: "text/plain",
+        Accept: "*/*",
         "Content-Type": "application/json",
       },
     });
-    return response.data as KitDelivery;
-  } catch (error) {
-    console.error("Error creating Kit Delivery:", error);
-    throw error;
+    
+    console.log("Response status:", response.status);
+    console.log("Response data:", response.data);
+    
+    if (response.status === 200 || response.status === 201) {
+      return response.data as KitDelivery;
+    }
+    
+    throw new Error(`Unexpected status code: ${response.status}`);
+  } catch (error: unknown) {
+    console.error("Lỗi khi tạo KitDelivery:", error);
+    if (error && typeof error === "object" && "response" in error) {
+      const axiosError = error as { response?: { status?: number; data?: unknown } };
+      console.log("Chi tiết lỗi:", axiosError.response?.status, axiosError.response?.data);
+    }
+    throw new Error("Không thể tạo mới KitDelivery");
   }
 };
 
@@ -105,16 +120,27 @@ export const updateKitDelivery = async (
   kitDeliveryData: UpdateKitDeliveryRequest
 ): Promise<string> => {
   try {
+    console.log(`Gọi API cập nhật KitDelivery ID = ${id}:`, kitDeliveryData);
+    
     const response = await axiosClient.put(ENDPOINT.UPDATE_KIT_DELIVERY(id), kitDeliveryData, {
       headers: {
-        Accept: "text/plain",
+        Accept: "*/*",
         "Content-Type": "application/json",
       },
     });
-    return response.data;
-  } catch (error) {
-    console.error(`Error updating Kit Delivery with ID ${id}:`, error);
-    throw error;
+    
+    if (response.status === 200) {
+      return response.data;
+    }
+    
+    throw new Error(`Unexpected status code: ${response.status}`);
+  } catch (error: unknown) {
+    console.error("Lỗi khi cập nhật KitDelivery:", error);
+    if (error && typeof error === "object" && "response" in error) {
+      const axiosError = error as { response?: { status?: number; data?: unknown } };
+      console.log("Chi tiết lỗi:", axiosError.response?.status, axiosError.response?.data);
+    }
+    throw new Error("Không thể cập nhật KitDelivery");
   }
 };
 
@@ -155,15 +181,27 @@ export const getKitDeliveryById = async (id: number): Promise<KitDelivery> => {
 // Cập nhật trạng thái kit delivery từ Pending sang Sent
 export const updateKitDeliveryStatus = async (id: number): Promise<{ kitDeliveryId: number; status: string; receivedAt: string }> => {
   try {
+    console.log(`Gọi API PATCH trạng thái KitDelivery ID = ${id}`);
+    
     const response = await axiosClient.patch(ENDPOINT.UPDATE_KIT_DELIVERY_STATUS(id), {}, {
       headers: {
-        Accept: "text/plain",
+        Accept: "*/*",
       },
     });
-    return response.data;
-  } catch (error) {
-    console.error(`Error updating Kit Delivery status with ID ${id}:`, error);
-    throw error;
+    
+    if (response.status === 200) {
+      console.log("Cập nhật trạng thái thành công:", response.data);
+      return response.data;
+    }
+    
+    throw new Error(`Unexpected status code: ${response.status}`);
+  } catch (error: unknown) {
+    console.error("Lỗi khi cập nhật trạng thái KitDelivery:", error);
+    if (error && typeof error === "object" && "response" in error) {
+      const axiosError = error as { response?: { status?: number; data?: unknown } };
+      console.log("Chi tiết lỗi:", axiosError.response?.status, axiosError.response?.data);
+    }
+    throw new Error("Không thể cập nhật trạng thái KitDelivery");
   }
 }; 
 

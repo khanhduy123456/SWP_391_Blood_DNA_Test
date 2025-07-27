@@ -459,11 +459,11 @@ const UpdateKitDeliveryModal: React.FC<UpdateKitDeliveryModalProps> = ({
     try {
       setLoading(true);
       // Import updateKitDelivery function
-      const { updateKitDelivery } = await import('../api/kitDelivery.api');
+      const { updateKitDelivery } = await import('../api/delivery.api');
       await updateKitDelivery(delivery.id, {
         kitId: parseInt(selectedKitId),
         kitType: kitType.trim(),
-        status,
+        statusId: status,
       });
 
       toast.success('Cập nhật kit delivery thành công!');

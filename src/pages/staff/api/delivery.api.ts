@@ -134,6 +134,8 @@ export const createKitDelivery = async (
 ): Promise<KitDelivery> => {
   try {
     console.log("Gọi API tạo KitDelivery:", data);
+    console.log("Endpoint:", ENDPOINT.CREATE_KIT_DELIVERY);
+    console.log("Request data:", JSON.stringify(data, null, 2));
 
     const response = await axiosClient.post(ENDPOINT.CREATE_KIT_DELIVERY, data, {
       headers: {
@@ -141,6 +143,9 @@ export const createKitDelivery = async (
         "Content-Type": "application/json",
       },
     });
+
+    console.log("Response status:", response.status);
+    console.log("Response data:", response.data);
 
     if (response.status === 200 || response.status === 201) {
       return response.data;
@@ -152,6 +157,17 @@ export const createKitDelivery = async (
     if (error && typeof error === "object" && "response" in error) {
       const axiosError = error as { response?: { status?: number; data?: unknown } };
       console.log("Chi tiết lỗi:", axiosError.response?.status, axiosError.response?.data);
+      
+      // Thêm thông tin chi tiết hơn
+      if (axiosError.response?.status === 401) {
+        throw new Error("401 - Không có quyền truy cập");
+      } else if (axiosError.response?.status === 404) {
+        throw new Error("404 - API không tồn tại");
+      } else if (axiosError.response?.status === 500) {
+        throw new Error("500 - Lỗi server");
+      } else if (axiosError.response?.status === 400) {
+        throw new Error(`400 - Dữ liệu không hợp lệ: ${JSON.stringify(axiosError.response?.data)}`);
+      }
     }
     throw new Error("Không thể tạo mới KitDelivery");
   }
@@ -223,10 +239,11 @@ export const updateKitDeliveryStatus = async (
 
     const response = await axiosClient.patch(
       ENDPOINT.UPDATE_KIT_DELIVERY_STATUS(kitDeliveryId),
-      {}, // không cần body
+      { status: "Sent" }, // Gửi status mới
       {
         headers: {
-          Accept: "application/json", // hoặc "text/plain" nếu BE trả về plain text
+          Accept: "application/json",
+          "Content-Type": "application/json",
         },
       },
     );
@@ -249,6 +266,16 @@ export const updateKitDeliveryStatus = async (
         axiosError.response?.status,
         axiosError.response?.data,
       );
+      
+      // Nếu có validation errors, hiển thị chi tiết
+      if (axiosError.response?.status === 400 && axiosError.response?.data) {
+        const errorData = axiosError.response.data as { errors?: Record<string, string[]> };
+        if (errorData.errors) {
+          console.log("Validation errors:", errorData.errors);
+          const errorMessages = Object.values(errorData.errors).flat();
+          throw new Error(`Validation errors: ${errorMessages.join(', ')}`);
+        }
+      }
     }
 
     throw new Error("Không thể cập nhật trạng thái KitDelivery");
@@ -298,15 +325,7 @@ export const getExRequestById = async (id: number): Promise<any> => {
   }
 };
 
-export interface KitDelivery {
-  id: number;
-  requestId: number;
-  kitId: number;
-  sentAt: string;
-  receivedAt: string;
-  statusId: string;
-  kitType: string;
-}
+// Interface này đã được định nghĩa ở trên, không cần định nghĩa lại
 export const getKitDeliveryByRequestId = async (
   requestId: number
 ): Promise<KitDelivery> => {
@@ -321,16 +340,38 @@ export const getKitDeliveryByRequestId = async (
     );
 
     if (response.status === 200 && response.data) {
-      return response.data as KitDelivery;
+      const kitDelivery = response.data as KitDelivery;
+      
+      // Xử lý ngày tháng để tránh "Invalid Date"
+      if (kitDelivery.sentAt && kitDelivery.sentAt !== 'Invalid Date') {
+        try {
+          new Date(kitDelivery.sentAt);
+        } catch {
+          kitDelivery.sentAt = '';
+        }
+      }
+      
+      if (kitDelivery.receivedAt && kitDelivery.receivedAt !== 'Invalid Date') {
+        try {
+          new Date(kitDelivery.receivedAt);
+        } catch {
+          kitDelivery.receivedAt = '';
+        }
+      }
+      
+      return kitDelivery;
     }
 
     throw new Error(`Unexpected status code: ${response.status}`);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
-    console.error(
-      `Lỗi khi lấy KitDelivery theo requestId ${requestId}:`,
-      error.response?.data || error.message
-    );
+    // Chỉ log lỗi nếu không phải 404 (Not Found)
+    if (error.response?.status !== 404) {
+      console.error(
+        `Lỗi khi lấy KitDelivery theo requestId ${requestId}:`,
+        error.response?.data || error.message
+      );
+    }
     throw error;
   }
 };
