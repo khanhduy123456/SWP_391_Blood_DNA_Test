@@ -42,7 +42,16 @@ function parseJwt(token: string) {
   }
 }
 
-const getPaymentStatusBadge = (status: string) => {
+const getPaymentStatusBadge = (status: string | undefined) => {
+  if (!status) {
+    return (
+      <Badge className="bg-gray-100 text-gray-800 border-gray-200 border font-medium">
+        <AlertCircle className="inline mr-1" size={14} />
+        Không xác định
+      </Badge>
+    );
+  }
+  
   const statusConfig = {
     "Pending": { color: "bg-yellow-100 text-yellow-800 border-yellow-200", text: "Chờ xử lý" },
     "Completed": { color: "bg-green-100 text-green-800 border-green-200", text: "Hoàn thành" },
@@ -69,7 +78,11 @@ const getPaymentStatusBadge = (status: string) => {
   );
 };
 
-const getPaymentMethodIcon = (method: string) => {
+const getPaymentMethodIcon = (method: string | undefined) => {
+  if (!method) {
+    return <CreditCard className="h-5 w-5 text-gray-600" />;
+  }
+  
   switch (method.toLowerCase()) {
     case "vnpay":
       return <CreditCard className="h-5 w-5 text-blue-600" />;
@@ -296,20 +309,6 @@ export default function PaymentList() {
               </div>
             </CardContent>
           </Card>
-        ) : payments.length === 0 ? (
-          <Card className="shadow-sm">
-            <CardContent className="p-16">
-              <div className="flex flex-col items-center gap-4">
-                <div className="p-4 bg-gray-100 rounded-full">
-                  <AlertCircle className="h-12 w-12 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-600">Chưa có giao dịch thanh toán nào</h3>
-                <p className="text-gray-500 text-center max-w-md">
-                  Bạn chưa có lịch sử thanh toán nào. Hãy thanh toán cho các đơn xét nghiệm để xem lịch sử ở đây.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
         ) : (
           <>
             <div className="space-y-4">
@@ -331,22 +330,22 @@ export default function PaymentList() {
                               {payment.amount.toLocaleString()}₫
                             </span>
                           </div>
-                          <div className="flex items-center gap-4 text-sm text-gray-600">
-                            <div className="flex items-center gap-1">
-                              <CreditCard className="h-4 w-4" />
-                              <span className="capitalize">{payment.paymentMethod}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-4 w-4" />
-                              <span>{new Date(payment.createAt).toLocaleString("vi-VN")}</span>
-                            </div>
+                                                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <div className="flex items-center gap-1">
+                            <CreditCard className="h-4 w-4" />
+                            <span className="capitalize">{payment.paymentMethod || 'Không xác định'}</span>
                           </div>
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4" />
+                            <span>{payment.createAt ? new Date(payment.createAt).toLocaleString("vi-VN") : 'Không xác định'}</span>
+                          </div>
+                        </div>
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-2">
-                        {getPaymentStatusBadge(payment.status)}
+                        {getPaymentStatusBadge(payment.status || 'Unknown')}
                         <div className="text-xs text-gray-500">
-                          Cập nhật: {new Date(payment.updateAt).toLocaleString("vi-VN")}
+                          Cập nhật: {payment.updateAt ? new Date(payment.updateAt).toLocaleString("vi-VN") : 'Không xác định'}
                         </div>
                       </div>
                     </div>
@@ -479,6 +478,34 @@ export default function PaymentList() {
               </Card>
             )}
           </>
+        )}
+        {/* Empty State */}
+        {!loading && payments.length === 0 && (
+          <Card className="shadow-sm">
+            <CardContent className="p-16">
+              <div className="flex flex-col items-center gap-4">
+                <div className="p-4 bg-gray-100 rounded-full">
+                  <CreditCard className="h-12 w-12 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-600">Chưa có lịch sử thanh toán</h3>
+                <p className="text-gray-500 text-center max-w-md">
+                  Bạn chưa có giao dịch thanh toán nào hoặc tính năng này đang được phát triển.
+                </p>
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-700">
+                    <strong>Thông báo:</strong> Bạn chưa có giao dịch thanh toán nào. 
+                    Hãy thanh toán cho các đơn hàng đã được chấp nhận để xem lịch sử ở đây.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => navigate('/customer/booking-list')}
+                  className="mt-4"
+                >
+                  Xem danh sách đơn hàng
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

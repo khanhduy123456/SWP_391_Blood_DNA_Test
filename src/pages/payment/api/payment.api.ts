@@ -56,7 +56,10 @@ export const createPayment = async (
     console.log('Calling createPayment with payload:', payload);
     console.log('Endpoint:', ENDPOINT.CREATE_PAYMENT);
     
-    const res = await axiosClient.post(ENDPOINT.CREATE_PAYMENT, payload);
+    // Tăng timeout cho payment API
+    const res = await axiosClient.post(ENDPOINT.CREATE_PAYMENT, payload, {
+      timeout: 30000, // 30 giây
+    });
     console.log('Payment API response:', res);
     console.log('Payment API data:', res.data);
     
@@ -66,6 +69,22 @@ export const createPayment = async (
     console.error("Lỗi khi tạo thanh toán:", error);
     console.error("Error response:", error.response);
     console.error("Error message:", error.message);
+    console.error("Error status:", error.response?.status);
+    console.error("Error code:", error.code);
+    
+    // Xử lý các loại lỗi cụ thể
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      throw new Error("Server đang bận, vui lòng thử lại sau.");
+    }
+    
+    if (error.response?.status === 504) {
+      throw new Error("Server đang bị quá tải, vui lòng thử lại sau.");
+    }
+    
+    if (error.response?.status === 404) {
+      throw new Error("API thanh toán chưa được implement. Vui lòng liên hệ admin.");
+    }
+    
     throw new Error("Không thể khởi tạo thanh toán.");
   }
 };

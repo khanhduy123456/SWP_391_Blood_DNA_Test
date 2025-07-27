@@ -32,6 +32,8 @@ const VNPayPayment: React.FC = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
   // Lấy userId từ localStorage hoặc từ token
   const getUserId = () => {
     // Thử lấy từ localStorage trước
@@ -138,41 +140,118 @@ const VNPayPayment: React.FC = () => {
     return services.find(s => s.id === serviceId);
   };
 
+  // Hàm test API trước
+  const testPaymentAPI = async () => {
+    try {
+      console.log('Testing payment API...');
+      const testData = {
+        userId: 1,
+        requestId: 1,
+        amount: 1000000,
+        orderInfo: 'Test payment'
+      };
+      
+      const res = await createPayment(testData);
+      console.log('Test API success:', res);
+      return true;
+    } catch (error) {
+      console.error('Test API failed:', error);
+      return false;
+    }
+  };
+
   // Hàm handlePayment với thông tin đầy đủ
   const handlePayment = async (request: RequestItem) => {
     setLoading(true);
     setError(null);
+    setPaymentUrl(null);
+    setPaymentSuccess(false);
     try {
       const service = getService(request.serviceId);
       console.log('Service found:', service);
+      
+      if (!service) {
+        setError('Không tìm thấy thông tin dịch vụ.');
+        return;
+      }
       
       // Tạo thông tin thanh toán từ request
       const paymentData = {
         userId: request.userId,
         requestId: request.id,
-        amount: service?.price || 0, // Sử dụng giá từ service
-        orderInfo: `Thanh toán ${service?.name || 'dịch vụ xét nghiệm'} - Đơn hàng #${request.id}`,
+        amount: service.price || 0, // Sử dụng giá từ service
+        orderInfo: `Thanh toán ${service.name || 'dịch vụ xét nghiệm'} - Đơn hàng #${request.id}`,
       };
       
       console.log('Payment data:', paymentData);
+      console.log('Calling createPayment API...');
       
       const res = await createPayment(paymentData);
       console.log('Payment response:', res);
+      console.log('Response type:', typeof res);
+      console.log('Response keys:', Object.keys(res));
+      
+      // Kiểm tra response format
+      if (!res) {
+        setError('Không nhận được phản hồi từ server.');
+        return;
+      }
       
       const paymentUrl = res.paymentUrl;
-      console.log('Payment URL:', paymentUrl);
+      console.log('Payment URL found:', paymentUrl);
       
-      if (paymentUrl) {
+      if (paymentUrl && typeof paymentUrl === 'string') {
         console.log('Redirecting to:', paymentUrl);
         setError(null);
-        window.location.href = paymentUrl;
+        setPaymentUrl(paymentUrl);
+        setPaymentSuccess(true);
+        
+        // Thử nhiều cách redirect khác nhau
+        try {
+          // Cách 1: Sử dụng window.location.href
+          console.log('Attempting redirect with window.location.href...');
+          window.location.href = paymentUrl;
+          
+          // Fallback: Nếu không redirect được, thử window.open
+          setTimeout(() => {
+            if (window.location.href !== paymentUrl) {
+              console.log('Fallback: Using window.open...');
+              const newWindow = window.open(paymentUrl, '_blank');
+              if (!newWindow) {
+                console.log('Popup blocked, trying window.location.replace...');
+                window.location.replace(paymentUrl);
+              }
+            }
+          }, 2000);
+          
+        } catch (redirectError) {
+          console.error('Redirect error:', redirectError);
+          // Fallback cuối cùng: Hiển thị link để user click
+          setError(`Không thể tự động chuyển hướng. Vui lòng click vào nút bên dưới để thanh toán.`);
+        }
       } else {
-        console.log('No payment URL received');
-        setError('Không nhận được link thanh toán từ hệ thống.');
+        console.log('No valid payment URL received');
+        console.log('Response data:', res);
+        setError('Không nhận được link thanh toán hợp lệ từ hệ thống. Vui lòng kiểm tra console để xem chi tiết.');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Lỗi khi tạo thanh toán:', error);
-      setError('Có lỗi khi tạo thanh toán.');
+      
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number; data?: unknown } };
+        console.error('Error details:', axiosError.response?.data);
+        console.error('Error status:', axiosError.response?.status);
+        
+        if (axiosError.response?.status === 404) {
+          setError('API thanh toán không tồn tại. Vui lòng liên hệ admin.');
+        } else if (axiosError.response?.status === 500) {
+          setError('Lỗi server. Vui lòng thử lại sau.');
+        } else {
+          setError('Có lỗi khi tạo thanh toán. Vui lòng thử lại.');
+        }
+      } else {
+        setError('Có lỗi khi tạo thanh toán. Vui lòng thử lại.');
+      }
     } finally {
       setLoading(false);
     }
@@ -195,14 +274,30 @@ const VNPayPayment: React.FC = () => {
                 <p className="text-gray-600 text-sm">Hoàn tất thanh toán để tiếp tục quá trình xét nghiệm ADN</p>
               </div>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => navigate('/customer/booking-list')}
-              className="flex items-center gap-2"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Quay lại
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  const result = await testPaymentAPI();
+                  if (result) {
+                    alert('✅ API thanh toán hoạt động bình thường!');
+                  } else {
+                    alert('❌ API thanh toán có vấn đề. Vui lòng kiểm tra console.');
+                  }
+                }}
+                className="flex items-center gap-2"
+              >
+                Test API
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => navigate('/customer/booking-list')}
+                className="flex items-center gap-2"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Quay lại
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -218,13 +313,51 @@ const VNPayPayment: React.FC = () => {
           </Card>
         )}
 
+        {/* Success State */}
+        {paymentSuccess && paymentUrl && (
+          <Card className="shadow-sm border-green-200 bg-green-50">
+            <CardContent className="p-6">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                  <p className="text-green-700 font-medium">Đã tạo link thanh toán thành công!</p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm text-gray-600">Đang chuyển hướng đến VNPay... Nếu không tự động chuyển hướng, vui lòng click nút bên dưới:</p>
+                  <Button
+                    onClick={() => window.open(paymentUrl, '_blank')}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Thanh toán VNPay
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Error State */}
         {error && (
           <Card className="shadow-sm border-red-200 bg-red-50">
             <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="h-6 w-6 text-red-600" />
-                <p className="text-red-700 font-medium">{error}</p>
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                  <p className="text-red-700 font-medium">{error}</p>
+                </div>
+                {paymentUrl && (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-sm text-gray-600">Nếu không tự động chuyển hướng, vui lòng click nút bên dưới:</p>
+                    <Button
+                      onClick={() => window.open(paymentUrl, '_blank')}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Thanh toán VNPay
+                    </Button>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
