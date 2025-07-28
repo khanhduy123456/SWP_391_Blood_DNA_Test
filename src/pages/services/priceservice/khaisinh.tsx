@@ -35,7 +35,7 @@ const DNAKhaiSinhPage: React.FC = () => {
     {
       id: 1,
       name: "Xét nghiệm ADN Khai sinh Tiêu chuẩn",
-      price: "3.500.000",
+      price: "5.000.0000đ",
       time: "02 ngày",
       description: "Xét nghiệm ADN cho thủ tục khai sinh hành chính",
       features: [
@@ -49,7 +49,7 @@ const DNAKhaiSinhPage: React.FC = () => {
     {
       id: 2,
       name: "Xét nghiệm ADN Khai sinh Nhanh",
-      price: "6.000.000",
+      price: "5.000.000",
       time: "06-08 tiếng",
       description: "Xét nghiệm nhanh cho thủ tục khai sinh gấp",
       features: [

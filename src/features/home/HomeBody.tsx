@@ -1,6 +1,6 @@
 import type React from "react";
 import { useState } from "react";
-import ImageSlider from "./imageslide";
+// import ImageSlider from "./imageslide";
 import TestimonialsCarousel from "./TestimonialsCarousel";
 import { useNavigate } from "react-router-dom";
 import { BookingModal } from "@/pages/customer/components/bookingPopup";
@@ -24,10 +24,9 @@ const Body: React.FC = () => {
     <>
       {/* Booking Modal */}
       <BookingModal isOpen={isBookingOpen} onClose={() => setIsBookingOpen(false)} userId={userId ? Number(userId) : 1} />
-      {/* Image Slider */}
       <div className="w-screen mb-20">
         <div className="mx-auto">
-          <ImageSlider />
+          {/* <ImageSlider /> */}
         </div>
       </div>
 

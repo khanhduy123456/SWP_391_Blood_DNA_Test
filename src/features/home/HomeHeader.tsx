@@ -59,10 +59,10 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
         { label: "Xét Nghiệm Huyết Thống Cha/Mẹ-Con", to: routes.adnChaCon },
       ],
     },
-    { label: "Bảng giá", hasDropdown: false, to: "#" },
+    // { label: "Bảng giá", hasDropdown: false, to: "#" },
     { label: "Hướng dẫn", hasDropdown: false, to: "#" },
     { label: "Tin tức", hasDropdown: false, to: "/news" },
-    { label: "Hỏi đáp", hasDropdown: false, to: "#" },
+    // { label: "Hỏi đáp", hasDropdown: false, to: "#" },
     { label: "Liên hệ", hasDropdown: false, to: "#footer" },
   ];
 
