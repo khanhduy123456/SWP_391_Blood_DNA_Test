@@ -361,20 +361,20 @@ export default function PaymentList() {
                                                   <div className="flex items-center gap-4 text-sm text-gray-600">
                           <div className="flex items-center gap-1">
                             <CreditCard className="h-4 w-4" />
-                            <span className="capitalize">{payment.paymentMethod || 'Không xác định'}</span>
+                            {/* <span className="capitalize">{payment.paymentMethod || 'Không xác định'}</span> */}
                           </div>
-                          <div className="flex items-center gap-1">
+                          {/* <div className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
                             <span>{payment.createAt ? new Date(payment.createAt).toLocaleString("vi-VN") : 'Không xác định'}</span>
-                          </div>
+                          </div> */}
                         </div>
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-2">
                         {getPaymentStatusBadge(payment.statusId || 'Unknown')}
-                        <div className="text-xs text-gray-500">
+                        {/* <div className="text-xs text-gray-500">
                           Cập nhật: {payment.updateAt ? new Date(payment.updateAt).toLocaleString("vi-VN") : 'Không xác định'}
-                        </div>
+                        </div> */}
                         <Button
                           size="sm"
                           variant="outline"
